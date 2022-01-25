@@ -1,11 +1,9 @@
 package com.migration.service.model.analysis.local.splittingStrategies.semanticAnalysis;
 
 import org.neo4j.driver.*;
-import org.neo4j.driver.types.Node;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @Component
@@ -22,7 +20,12 @@ public class SemanticAnalysis {
 		this.driver = driver;
 	}
 
+	// TODO add clean method to remove "" which come from neo4j
+
 	public void executeSemanticAnalysis(){
+		// TODO vom frontend aus soll man für jedes Layer separat die analyse fahren können
+		// man soll Zusatzwörter eingeben können wie z.B. "Rest", "Soap"
+		int searchExtent = 3;
 		List<String> layers = getLayers();
 		List<String> neighbourNodes = new ArrayList<>();
 		try(Session session = driver.session()){
@@ -30,7 +33,7 @@ public class SemanticAnalysis {
 				neighbourNodes.clear();
 				Result result = session.run("MATCH (n:Layer {name: '" + layer + "'}) " +
 						"CALL apoc.neighbors.byhop(n, 'CALLS_METHOD|IMPLEMENTS|" +
-						"EXTENDS|INJECTS|IS_ENTITY|BELONGS_TO|USES_FUNCTIONALITY', 3) " +
+						"EXTENDS|INJECTS|IS_ENTITY|BELONGS_TO|USES_FUNCTIONALITY', " + searchExtent + ") " +
 						"YIELD nodes " +
 						"RETURN nodes");
 				for (Result it = result; it.hasNext(); ) {
@@ -41,6 +44,12 @@ public class SemanticAnalysis {
 					}
 				}
 				List<String> commonWordsPerLayer = findCommonWordsPerLayer(neighbourNodes, splitCamelCase(neighbourNodes));
+
+				// TODO example how to use checkif word is common method
+				if(checkIfWordIsCommon(neighbourNodes, "DataService.java")){
+					commonWordsPerLayer.add("DataService.java");
+				}
+
 				System.out.println("++++++++");
 				System.out.println(layer);
 				System.out.println(commonWordsPerLayer.size());
@@ -50,6 +59,10 @@ public class SemanticAnalysis {
 			}
 
 		}
+	}
+
+	public void executeSemanticAnalysisExtended(SemanticAnalysisExtension semanticAnalysisExtension) {
+		System.out.println(semanticAnalysisExtension.toString());
 	}
 
 
@@ -95,4 +108,22 @@ public class SemanticAnalysis {
 		}
 		return commonWordsPerLayer;
 	}
+
+	// TODO kann genutzt werden wenn Wissensarbeiter eigene Wörter eingeben können
+	public boolean checkIfWordIsCommon(List<String> neighbourNodeNames, String word){
+		int wordFrequency = 0;
+		for (String neighbourNodeName : neighbourNodeNames) {
+			neighbourNodeName.toLowerCase();
+			neighbourNodeName.replaceAll("\"", "");
+			if (neighbourNodeName.contains(word)) {
+				wordFrequency++;
+			}
+		}
+		if (wordFrequency > 3) {
+			return true;
+		}
+		return false;
+	}
+
+
 }

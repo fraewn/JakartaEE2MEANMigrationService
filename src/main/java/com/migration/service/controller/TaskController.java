@@ -1,10 +1,13 @@
 package com.migration.service.controller;
 
 
+import com.migration.service.model.analysis.global.GlobalAnalysis;
 import com.migration.service.model.analysis.local.splittingStrategies.semanticAnalysis.SemanticAnalysis;
+import com.migration.service.model.analysis.local.splittingStrategies.semanticAnalysis.SemanticAnalysisExtension;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledgeService;
 import lombok.AllArgsConstructor;
+import org.apache.tomcat.jni.Global;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +20,7 @@ import java.util.List;
 public class TaskController {
 	private final SemanticKnowledgeService semanticKnowledgeService;
 	private final SemanticAnalysis semanticAnalysis;
+	private final GlobalAnalysis globalAnalysis;
 
 	@GetMapping("/semanticKnowledge/show")
 	@ResponseBody
@@ -39,6 +43,24 @@ public class TaskController {
 	public ResponseEntity<String> callSemanticAnalysis(){
 		semanticAnalysis.executeSemanticAnalysis();
 		return new ResponseEntity<>("Semantic Analysis was executed", HttpStatus.OK);
+	}
+
+	@PostMapping("/extendedSemanticAnalysis")
+	public ResponseEntity<String> callSemanticAnalysisExtended(@RequestBody SemanticAnalysisExtension semanticAnalysisExtension){
+		// TODO wenn ein analyse auftrag rein kommt, wird dieser:
+		// 1) ausgeführt
+		// 2) in der DB persistiert
+		// 3) eine mongo query abgeschickt die die aktualisierten Daten holt
+		// 4) die aktualisierten Daten mit diesem Request hier zurück gegeben
+		// sonst muss im frontend immer die page aktualisiert werden
+		semanticAnalysis.executeSemanticAnalysisExtended(semanticAnalysisExtension);
+		return new ResponseEntity<>("Extended semantic Analysis was executed", HttpStatus.OK);
+	}
+
+	@GetMapping("/globalAnalyses")
+	public ResponseEntity<String> callGlobalAnalyses(){
+		globalAnalysis.executeGlobalAnalyses();
+		return new ResponseEntity<>("Global Analyses were executed", HttpStatus.OK);
 	}
 
 }
