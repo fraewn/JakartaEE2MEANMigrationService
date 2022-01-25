@@ -1,4 +1,4 @@
-package com.migration.service.model.knowledgeCollection.moduleIdentification.semanticAnalysis;
+package com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;

@@ -1,5 +1,6 @@
-package com.migration.service.model.knowledgeCollection.moduleIdentification;
+package com.migration.service.model.knowledgeCollection.localKnowledge.modules;
 
+import com.migration.service.model.knowledgeCollection.localKnowledge.SplittingStrategy;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 

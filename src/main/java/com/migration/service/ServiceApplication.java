@@ -1,16 +1,11 @@
 package com.migration.service;
 
-import com.migration.service.model.knowledgeCollection.moduleIdentification.semanticAnalysis.SemanticKnowledge;
-import com.migration.service.model.knowledgeCollection.moduleIdentification.semanticAnalysis.SemanticKnowledgeDAO;
-import com.migration.service.model.knowledgeCollection.moduleIdentification.semanticAnalysis.SemanticKnowledgeRepository;
-import com.migration.service.model.knowledgeCollection.moduleIdentification.semanticAnalysis.SemanticKnowledgeService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
+import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledgeRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -28,7 +23,7 @@ public class ServiceApplication {
 
 	}
 
-	@Bean
+	/*@Bean
 	CommandLineRunner runner(SemanticKnowledgeRepository semanticKnowledgeRepository, MongoTemplate mongoTemplate) {
 		return args -> {
 			SemanticKnowledge semanticKnowledgeExample = new SemanticKnowledge();
@@ -43,6 +38,6 @@ public class ServiceApplication {
 				System.out.println("found one!");
 			}
 		};
-	}
+	}*/
 
 }

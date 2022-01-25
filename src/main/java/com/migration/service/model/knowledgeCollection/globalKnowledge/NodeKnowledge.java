@@ -1,4 +1,4 @@
-package com.migration.service.model.knowledgeCollection;
+package com.migration.service.model.knowledgeCollection.globalKnowledge;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -11,7 +11,7 @@ public class NodeKnowledge {
 	private NodeType type;
 	private double triangleScore;
 	private double triangleCoefficientScore;
-	private double betweenessCentralityScore;
+	private double betweennessCentralityScore;
 	private double pageRankScore;
 	private double closenessCentralityScore;
 	private boolean classIsEntity;
