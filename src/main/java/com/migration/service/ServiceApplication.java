@@ -3,6 +3,7 @@ package com.migration.service;
 import com.migration.service.model.knowledgeCollection.moduleIdentification.semanticAnalysis.SemanticKnowledge;
 import com.migration.service.model.knowledgeCollection.moduleIdentification.semanticAnalysis.SemanticKnowledgeDAO;
 import com.migration.service.model.knowledgeCollection.moduleIdentification.semanticAnalysis.SemanticKnowledgeRepository;
+import com.migration.service.model.knowledgeCollection.moduleIdentification.semanticAnalysis.SemanticKnowledgeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -24,15 +25,6 @@ public class ServiceApplication {
 		SpringApplication.run(ServiceApplication.class, args);
 
 
-		/*AbstractApplicationContext context = new AnnotationConfigApplicationContext(SpringConfig.class);
-		SemanticKnowledge semanticKnowledgeExample = new SemanticKnowledge();
-		semanticKnowledgeExample.setName("Persistence Layer");
-		semanticKnowledgeExample.setKeywords(new String[]{"DAO.java", "ServiceImpl.java", "Service.java"});
-
-		SemanticKnowledgeDAO semanticKnowledgeDAO = (SemanticKnowledgeDAO) context.getBean("semanticKnowledgeDAO");
-		semanticKnowledgeDAO.createSemanticKnowledge(semanticKnowledgeExample);
-		System.out.println(semanticKnowledgeDAO.getAllSemanticKnowledge());*/
-
 
 	}
 
@@ -50,7 +42,6 @@ public class ServiceApplication {
 			if(semanticKnowledge.size() > 0 ){
 				System.out.println("found one!");
 			}
-
 		};
 	}
 
