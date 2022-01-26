@@ -3,30 +3,45 @@ package com.migration.service.model.knowledgeCollection.globalKnowledge;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.List;
+
 @Document(value="nodeKnowledge")
 public class NodeKnowledge {
 	// represents the knowledge about a architecture element/ node collected during the migration strategies' executions
 	@Id
 	private String id;
-	private NodeType type;
+	private String name;
+	private List<String> label;
+
 	private double triangleScore;
 	private double triangleCoefficientScore;
 	private double betweennessCentralityScore;
 	private double pageRankScore;
 	private double closenessCentralityScore;
+
 	private boolean classIsEntity;
 	private String representedEntity;
+
 	private boolean reviewNecessary;
 	private boolean review;
-	private String[] keywords;
+
+	private List<String> keywords;
 
 
-	public NodeType getType() {
-		return type;
+	public String getName() {
+		return name;
 	}
 
-	public void setType(NodeType type) {
-		this.type = type;
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public List<String> getLabel() {
+		return label;
+	}
+
+	public void setLabel(List<String> label) {
+		this.label = label;
 	}
 
 	public double getTriangleScore() {
@@ -101,11 +116,11 @@ public class NodeKnowledge {
 		this.review = review;
 	}
 
-	public String[] getKeywords() {
+	public List<String> getKeywords() {
 		return keywords;
 	}
 
-	public void setKeywords(String[] keywords) {
+	public void setKeywords(List<String> keywords) {
 		this.keywords = keywords;
 	}
 }
