@@ -23,14 +23,20 @@ public class NodeKnowledge {
 	private String representedEntity;
 
 	private boolean reviewNecessary;
-	private boolean review;
+	private String review;
 
 	private List<String> keywords;
 
-
-	public String getName() {
-		return name;
+	public boolean containsLabel(String label){
+		Boolean comparison = false;
+		for(String comparedLabel : this.label){
+			if(label.equals(comparedLabel)){
+				comparison = true;
+			}
+		}
+		return comparison;
 	}
+	public String getName() { return name; }
 
 	public void setName(String name) {
 		this.name = name;
@@ -108,11 +114,11 @@ public class NodeKnowledge {
 		this.reviewNecessary = reviewNecessary;
 	}
 
-	public boolean isReview() {
+	public String getReview() {
 		return review;
 	}
 
-	public void setReview(boolean review) {
+	public void setReview(String review) {
 		this.review = review;
 	}
 

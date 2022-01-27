@@ -3,6 +3,8 @@ package com.migration.service.model.knowledgeCollection.localKnowledge.splitting
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.List;
+
 @Document(value="semanticKnowledge")
 public class SemanticKnowledge {
 
@@ -10,7 +12,7 @@ public class SemanticKnowledge {
 	@Id
 	private String id;
 	private String name;
-	private String[] keywords;
+	private List<String> keywords;
 
 	public String getName() {
 		return name;
@@ -20,11 +22,11 @@ public class SemanticKnowledge {
 		this.name = name;
 	}
 
-	public String[] getKeywords() {
+	public List<String> getKeywords() {
 		return keywords;
 	}
 
-	public void setKeywords(String[] keywords) {
+	public void setKeywords(List<String> keywords) {
 		this.keywords = keywords;
 	}
 

@@ -3,20 +3,16 @@ package com.migration.service.model.analysis.global;
 import com.migration.service.model.analysis.Util.TriangleCountResult;
 import com.migration.service.model.knowledgeCollection.globalKnowledge.NodeKnowledge;
 import org.neo4j.driver.*;
-import org.neo4j.driver.util.Pair;
 import org.springframework.stereotype.Component;
+import org.w3c.dom.Node;
 
 import java.util.*;
 
 @Component
 public class GlobalAnalysis {
 
-	private List<Pair<String, Value>> triangleCountResults;
+	//private List<Pair<String, Value>> triangleCountResults;
 
-	private final Driver driver;
-	public GlobalAnalysis(Driver driver) {
-		this.driver = driver;
-	}
 	private String pageRankQuery = "CALL algo.pageRank.stream(null, null, " +
 			"            {iterations:20, dampingFactor:0.85}) " +
 			"YIELD nodeId, score " +
@@ -35,9 +31,17 @@ public class GlobalAnalysis {
 			"YIELD nodeId, coefficient " +
 			"return algo.getNodeById(nodeId).name as name, coefficient as score";
 
-	public void executeGlobalAnalyses() {
+	private final Driver driver;
+	public GlobalAnalysis(Driver driver) {
+		this.driver = driver;
+	}
+
+	public List<NodeKnowledge> executeGlobalAnalyses() {
+		List<NodeKnowledge> nodeKnowledge = new ArrayList<>();
 		List<String> nodeNames = getAllNodeNames();
 		HashMap<String, List<String>> nodeLabels = getAllNodesWithLabels();
+		List<String> classEntities = getEntityClasses();
+
 		HashMap<String, Double> betweennessCentralityAnalysisResults = executeAnalysis(betweennessCentralityQuery);
 		HashMap<String, Double> closenessCentralityAnalysisResults = executeAnalysis(closenessCentralityQuery);
 		HashMap<String, Double> pageRankAnalysisResults = executeAnalysis(pageRankQuery);
@@ -55,9 +59,43 @@ public class GlobalAnalysis {
 			nodeKnowledgeInstance.setBetweennessCentralityScore(betweennessCentralityAnalysisResults.get(nodeName));
 			nodeKnowledgeInstance.setClosenessCentralityScore(closenessCentralityAnalysisResults.get(nodeName));
 			nodeKnowledgeInstance.setPageRankScore(pageRankAnalysisResults.get(nodeName));
-
-
+			nodeKnowledgeInstance.setClassIsEntity(false);
+			for(String classEntity : classEntities){
+				if (classEntity.equals(nodeName)) {
+					nodeKnowledgeInstance.setClassIsEntity(true);
+				}
+			}
+			if(nodeKnowledgeInstance.isClassIsEntity()){
+				nodeKnowledgeInstance.setRepresentedEntity(getEntity(nodeName));
+				System.out.println(nodeKnowledgeInstance.getRepresentedEntity());
+			}
+			nodeKnowledge.add(nodeKnowledgeInstance);
 		}
+		return nodeKnowledge;
+	}
+
+	public List<NodeKnowledge> checkIfReviewIsNecessary(List<NodeKnowledge> nodeKnowledge){
+		for(NodeKnowledge nodeKnowledgeInstance : nodeKnowledge){
+			nodeKnowledgeInstance.setReviewNecessary(false);
+			if(nodeKnowledgeInstance.getTriangleScore() > 10 || nodeKnowledgeInstance.getTriangleScore() >= 0.5
+			|| nodeKnowledgeInstance.getBetweennessCentralityScore() >= 10 || nodeKnowledgeInstance.getClosenessCentralityScore() >= 0.38){
+				if(!nodeKnowledgeInstance.containsLabel("AbstractClass") && nodeKnowledgeInstance.containsLabel("Interface")){
+					nodeKnowledgeInstance.setReview("Abstract or Interface");
+				}
+				else if(nodeKnowledgeInstance.containsLabel("Entity")) {
+					nodeKnowledgeInstance.setReview("Entity");
+				}
+				else if(nodeKnowledgeInstance.containsLabel("Layer")){
+					nodeKnowledgeInstance.setReview("Layer");
+				}
+				else {
+					nodeKnowledgeInstance.setReviewNecessary(true);
+					nodeKnowledgeInstance.setReview("Review necessary");
+				}
+			}
+		}
+
+		return nodeKnowledge;
 	}
 
 	public HashMap<String, List<String>> getAllNodesWithLabels(){
@@ -82,6 +120,41 @@ public class GlobalAnalysis {
 		}
 	}
 
+	public List<String> getEntityClasses(){
+		String query = "MATCH (n:Layer {name: \"Persistence Layer\"})\n" +
+				"CALL apoc.neighbors.byhop(n, \"IS_ENTITY|BELONGS_TO\", 2)\n" +
+				"YIELD nodes\n" +
+				"UNWIND nodes AS m\n" +
+				"WITH m\n" +
+				"WHERE 'Class' IN LABELS(m)\n" +
+				"return m";
+		try(Session session = driver.session()) {
+			return session.run(query).list(result -> result.get("m").asNode().get("name").asString());
+		}
+	}
+
+	public String getEntity(String className){
+		String query = "MATCH (n:Class {name:'" + className + "'})-[r:IS_ENTITY]-(p) return p";
+		try(Session session = driver.session()) {
+			return session.run(query).next().get("p").asNode().get("name").asString();
+		}
+	}
+
+	public HashMap<String, Double> executeAnalysis(String query){
+		try (Session session = driver.session()) {
+			Result result = session.run(query);
+
+			HashMap<String, Double> results = new HashMap<>();
+			for (Result it = result; it.hasNext(); ) {
+				Record record = it.next();
+				Map<String,Object> map = record.asMap();
+				results.put((String) map.get("name"), Double.valueOf(map.get("score").toString()).doubleValue());
+
+			}
+			return results;
+		}
+	}
+
 	/*public HashMap<String, TriangleCountResult> executeTriangleCount() {
 		try (Session session = driver.session()) {
 			Result result = session.run("CALL algo.triangleCount.stream(null, null, {concurrency:8}) " +
@@ -98,21 +171,6 @@ public class GlobalAnalysis {
 			return triangleResults;
 		}
 	}*/
-
-	public HashMap<String, Double> executeAnalysis(String query){
-		try (Session session = driver.session()) {
-			Result result = session.run(query);
-
-			HashMap<String, Double> results = new HashMap<>();
-			for (Result it = result; it.hasNext(); ) {
-				Record record = it.next();
-				Map<String,Object> map = record.asMap();
-				results.put((String) map.get("name"), Double.valueOf(map.get("score").toString()).doubleValue());
-
-			}
-			return results;
-		}
-	}
 
 
 }

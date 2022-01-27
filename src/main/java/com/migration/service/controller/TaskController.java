@@ -4,6 +4,8 @@ package com.migration.service.controller;
 import com.migration.service.model.analysis.global.GlobalAnalysis;
 import com.migration.service.model.analysis.local.splittingStrategies.semanticAnalysis.SemanticAnalysis;
 import com.migration.service.model.analysis.local.splittingStrategies.semanticAnalysis.SemanticAnalysisExtension;
+import com.migration.service.model.knowledgeCollection.globalKnowledge.NodeKnowledge;
+import com.migration.service.model.knowledgeCollection.globalKnowledge.NodeKnowledgeService;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledgeService;
 import lombok.AllArgsConstructor;
@@ -21,6 +23,7 @@ public class TaskController {
 	private final SemanticKnowledgeService semanticKnowledgeService;
 	private final SemanticAnalysis semanticAnalysis;
 	private final GlobalAnalysis globalAnalysis;
+	private final NodeKnowledgeService nodeKnowledgeService;
 
 	@GetMapping("/semanticKnowledge/show")
 	@ResponseBody
@@ -59,7 +62,8 @@ public class TaskController {
 
 	@GetMapping("/globalAnalyses")
 	public ResponseEntity<String> callGlobalAnalyses(){
-		globalAnalysis.executeGlobalAnalyses();
+		List<NodeKnowledge> nodeKnowledge = globalAnalysis.executeGlobalAnalyses();
+		nodeKnowledgeService.insertAll(nodeKnowledge);
 		return new ResponseEntity<>("Global Analyses were executed", HttpStatus.OK);
 	}
 

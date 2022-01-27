@@ -1,35 +1,45 @@
 package com.migration.service.model.analysis.local.splittingStrategies.semanticAnalysis;
 
+import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
 import org.neo4j.driver.*;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 @Component
 public class SemanticAnalysis {
 	private final Driver driver;
-
+	public SemanticAnalysis(Driver driver) {
+		this.driver = driver;
+	}
 
 	// Klasse soll mir aus neo4j die Daten besorgen für die semantische analyse
 	// dh nachbarn der layer knoten
 	// dann in denen analysieren welche Wörter oft vorkommen
 	// dann ein semantic knowledge object machen
 	// dann den semnatic knowledge service aufrufen und das persistieren
-	public SemanticAnalysis(Driver driver) {
-		this.driver = driver;
-	}
+
 
 	// TODO add clean method to remove "" which come from neo4j
 
-	public void executeSemanticAnalysis(){
+	public void addKeywordsToLayer(HashMap<String,List<String>> keywords){
+
+	}
+
+	public List<SemanticKnowledge> executeSemanticAnalysis(){
+		List<SemanticKnowledge> semanticKnowledge = new ArrayList<>();
 		// TODO vom frontend aus soll man für jedes Layer separat die analyse fahren können
 		// man soll Zusatzwörter eingeben können wie z.B. "Rest", "Soap"
 		int searchExtent = 3;
+
 		List<String> layers = getLayers();
 		List<String> neighbourNodes = new ArrayList<>();
+
 		try(Session session = driver.session()){
 			for(String layer : layers) {
+				SemanticKnowledge semanticKnowledgeInstance = new SemanticKnowledge();
 				neighbourNodes.clear();
 				Result result = session.run("MATCH (n:Layer {name: '" + layer + "'}) " +
 						"CALL apoc.neighbors.byhop(n, 'CALLS_METHOD|IMPLEMENTS|" +
@@ -43,29 +53,30 @@ public class SemanticAnalysis {
 						neighbourNodes.add(value.get(i).get("name").toString());
 					}
 				}
+
 				List<String> commonWordsPerLayer = findCommonWordsPerLayer(neighbourNodes, splitCamelCase(neighbourNodes));
 
+				semanticKnowledgeInstance.setName(layer);
+				semanticKnowledgeInstance.setKeywords(commonWordsPerLayer);
 				// TODO example how to use checkif word is common method
-				if(checkIfWordIsCommon(neighbourNodes, "DataService.java")){
+				/*if(checkIfWordIsCommon(neighbourNodes, "DataService.java")){
 					commonWordsPerLayer.add("DataService.java");
-				}
+				}*/
 
 				System.out.println("++++++++");
 				System.out.println(layer);
-				System.out.println(commonWordsPerLayer.size());
 				for(String word : commonWordsPerLayer){
 					System.out.println(word);
 				}
+				semanticKnowledge.add(semanticKnowledgeInstance);
 			}
-
 		}
+		return semanticKnowledge;
 	}
 
 	public void executeSemanticAnalysisExtended(SemanticAnalysisExtension semanticAnalysisExtension) {
 		System.out.println(semanticAnalysisExtension.toString());
 	}
-
-
 
 	public List<String> getLayers(){
 		try(Session session = driver.session()){
