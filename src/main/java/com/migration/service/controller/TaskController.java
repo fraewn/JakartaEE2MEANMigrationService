@@ -42,10 +42,32 @@ public class TaskController {
 		return new ResponseEntity<>("Inserting semantic knowledge was successful", HttpStatus.OK);
 	}
 
+	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/semanticAnalysis/current")
+	public ResponseEntity<List<SemanticKnowledge>> getCurrentSemanticKnowledge(){
+		List<SemanticKnowledge> semanticKnowledge = semanticKnowledgeService.getAllSemanticKnowledge();
+		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledgeService.getAllSemanticKnowledge(), HttpStatus.OK);
+	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
 	@GetMapping("/semanticAnalysis")
-	public ResponseEntity<String> callSemanticAnalysis(){
-		semanticAnalysis.executeSemanticAnalysis();
-		return new ResponseEntity<>("Semantic Analysis was executed", HttpStatus.OK);
+	public ResponseEntity<List<SemanticKnowledge>> callSemanticAnalysis(){
+		semanticKnowledgeService.deleteAll();
+		List<SemanticKnowledge> semanticKnowledge = semanticAnalysis.executeSemanticAnalysis();
+		semanticKnowledgeService.insert(semanticKnowledge);
+		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledgeService.getAllSemanticKnowledge(), HttpStatus.OK);
+	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
+	@PostMapping("/semanticAnalysisForOneLayer")
+	public ResponseEntity<List<SemanticKnowledge>> callSemanticAnalysisForOneLayerWithoutAdditionalKeywords(@RequestParam String layer,
+																											@RequestBody List<SemanticAnalysisExtension> semanticAnalysisExtension){
+		List<SemanticKnowledge> updatedSemanticKnowledge = semanticAnalysis.executeSemanticAnalysisForOneLayerWithoutAdditionalKeywords(
+						semanticAnalysisExtension,
+						layer);
+		semanticKnowledgeService.update(updatedSemanticKnowledge);
+		List<SemanticKnowledge> semanticKnowledge = semanticKnowledgeService.getAllSemanticKnowledge();
+		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledge, HttpStatus.OK);
 	}
 
 	@PostMapping("/extendedSemanticAnalysis")

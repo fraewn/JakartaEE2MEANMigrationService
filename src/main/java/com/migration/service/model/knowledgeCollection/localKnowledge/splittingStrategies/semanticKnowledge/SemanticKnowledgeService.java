@@ -18,4 +18,24 @@ public class SemanticKnowledgeService {
 	public void insert(SemanticKnowledge semanticKnowledge) {
 		semanticKnowledgeRepository.insert(semanticKnowledge);
 	}
+
+	public void insert(List<SemanticKnowledge> semanticKnowledge) {
+		semanticKnowledgeRepository.insert(semanticKnowledge);
+	}
+
+	public void update(List<SemanticKnowledge> updatedSemanticKnowledge){
+		List<SemanticKnowledge> current = getAllSemanticKnowledge();
+		SemanticKnowledge updatedSemanticKnowledgeInstance = updatedSemanticKnowledge.get(0);
+		for(SemanticKnowledge currentSemanticKnowledgeInstance : current){
+			if(currentSemanticKnowledgeInstance.getName().equals(updatedSemanticKnowledgeInstance.getName())){
+				currentSemanticKnowledgeInstance.setKeywords(updatedSemanticKnowledgeInstance.getKeywords());
+			}
+		}
+		semanticKnowledgeRepository.deleteAll();
+		semanticKnowledgeRepository.insert(current);
+	}
+
+	public void deleteAll() {
+		semanticKnowledgeRepository.deleteAll();
+	}
 }

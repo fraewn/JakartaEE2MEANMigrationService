@@ -1,9 +1,11 @@
 package com.migration.service.model.analysis.local.splittingStrategies.semanticAnalysis;
 
+import java.util.List;
+
 public class SemanticAnalysisExtension {
 	private String layer;
 	private int searchExtent;
-	private String[] additionalKeywords;
+	private List<String> additionalKeywords;
 
 	public String getLayer() {
 		return layer;
@@ -21,11 +23,11 @@ public class SemanticAnalysisExtension {
 		this.searchExtent = searchExtent;
 	}
 
-	public String[] getAdditionalKeywords() {
+	public List<String> getAdditionalKeywords() {
 		return additionalKeywords;
 	}
 
-	public void setAdditionalKeywords(String[] additionalKeywords) {
+	public void setAdditionalKeywords(List<String> additionalKeywords) {
 		this.additionalKeywords = additionalKeywords;
 	}
 }

@@ -28,6 +28,47 @@ public class SemanticAnalysis {
 
 	}
 
+	public List<SemanticKnowledge> executeSemanticAnalysisForOneLayerWithoutAdditionalKeywords(List<SemanticAnalysisExtension> semanticAnalysisExtensions, String layer){
+		List<SemanticKnowledge> semanticKnowledge = new ArrayList<>();
+		List<String> neighbourNodes = new ArrayList<>();
+		int searchExtent = 0;
+		for(SemanticAnalysisExtension extension : semanticAnalysisExtensions){
+			if(layer.equals(extension.getLayer())){
+				searchExtent = extension.getSearchExtent();
+			}
+		}
+		try(Session session = driver.session()){
+				SemanticKnowledge semanticKnowledgeInstance = new SemanticKnowledge();
+				neighbourNodes.clear();
+				Result result = session.run("MATCH (n:Layer {name: '" + layer + "'}) " +
+						"CALL apoc.neighbors.byhop(n, 'CALLS_METHOD|IMPLEMENTS|" +
+						"EXTENDS|INJECTS|IS_ENTITY|BELONGS_TO|USES_FUNCTIONALITY', " + searchExtent + ") " +
+						"YIELD nodes " +
+						"RETURN nodes");
+				for (Result it = result; it.hasNext(); ) {
+					Record record = it.next();
+					Value value = record.get("nodes");
+					for(int i=0; i < value.size(); i++){
+						neighbourNodes.add(value.get(i).get("name").toString());
+					}
+				}
+
+				List<String> commonWordsPerLayer = findCommonWordsPerLayer(neighbourNodes, splitCamelCase(neighbourNodes));
+
+				semanticKnowledgeInstance.setName(layer);
+				semanticKnowledgeInstance.setKeywords(commonWordsPerLayer);
+
+				System.out.println("++++++++");
+				System.out.println(layer);
+				for(String word : commonWordsPerLayer){
+					System.out.println(word);
+				}
+				semanticKnowledge.add(semanticKnowledgeInstance);
+		}
+		// persist in db
+		return semanticKnowledge;
+	}
+
 	public List<SemanticKnowledge> executeSemanticAnalysis(){
 		List<SemanticKnowledge> semanticKnowledge = new ArrayList<>();
 		// TODO vom frontend aus soll man für jedes Layer separat die analyse fahren können
