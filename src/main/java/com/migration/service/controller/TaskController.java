@@ -62,7 +62,7 @@ public class TaskController {
 	@PostMapping("/semanticAnalysisForOneLayer")
 	public ResponseEntity<List<SemanticKnowledge>> callSemanticAnalysisForOneLayerWithoutAdditionalKeywords(@RequestParam String layer,
 																											@RequestBody List<SemanticAnalysisExtension> semanticAnalysisExtension){
-		List<SemanticKnowledge> updatedSemanticKnowledge = semanticAnalysis.executeSemanticAnalysisForOneLayerWithoutAdditionalKeywords(
+		List<SemanticKnowledge> updatedSemanticKnowledge = semanticAnalysis.executeSemanticAnalysisForOneLayer(
 						semanticAnalysisExtension,
 						layer);
 		semanticKnowledgeService.update(updatedSemanticKnowledge);
@@ -70,16 +70,15 @@ public class TaskController {
 		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledge, HttpStatus.OK);
 	}
 
-	@PostMapping("/extendedSemanticAnalysis")
-	public ResponseEntity<String> callSemanticAnalysisExtended(@RequestBody SemanticAnalysisExtension semanticAnalysisExtension){
-		// TODO wenn ein analyse auftrag rein kommt, wird dieser:
-		// 1) ausgeführt
-		// 2) in der DB persistiert
-		// 3) eine mongo query abgeschickt die die aktualisierten Daten holt
-		// 4) die aktualisierten Daten mit diesem Request hier zurück gegeben
-		// sonst muss im frontend immer die page aktualisiert werden
-		semanticAnalysis.executeSemanticAnalysisExtended(semanticAnalysisExtension);
-		return new ResponseEntity<>("Extended semantic Analysis was executed", HttpStatus.OK);
+	@CrossOrigin(origins = "http://localhost:4200")
+	@PostMapping("/semanticAnalysisForOneLayerExtended")
+	public ResponseEntity<List<SemanticKnowledge>> callSemanticAnalysisExtended(@RequestParam String layer,
+															   @RequestBody List<SemanticAnalysisExtension> semanticAnalysisExtension){
+		List<SemanticKnowledge> updatedSemanticKnowledge =
+				semanticAnalysis.executeSemanticAnalysisForOneLayerExtended(semanticAnalysisExtension, layer);
+		semanticKnowledgeService.update(updatedSemanticKnowledge);
+		List<SemanticKnowledge> semanticKnowledge = semanticKnowledgeService.getAllSemanticKnowledge();
+		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledge, HttpStatus.OK);
 	}
 
 	@GetMapping("/globalAnalyses")
