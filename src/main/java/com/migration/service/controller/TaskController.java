@@ -115,6 +115,15 @@ public class TaskController {
 		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledge, HttpStatus.OK);
 	}
 
+	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/semanticAnalysis/moveKeyword")
+	public ResponseEntity<List<SemanticKnowledge>> semanticAnalysisMoveKeyword(@RequestParam String oldLayer,
+																						String newLayer, String keyword){
+		semanticKnowledgeService.moveKeyword(keyword, oldLayer, newLayer);
+		List<SemanticKnowledge> semanticKnowledge = semanticKnowledgeService.getAllSemanticKnowledge();
+		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledge, HttpStatus.OK);
+	}
+
 	@GetMapping("/globalAnalyses")
 	public ResponseEntity<String> callGlobalAnalyses(){
 		List<NodeKnowledge> nodeKnowledge = globalAnalysis.executeGlobalAnalyses();

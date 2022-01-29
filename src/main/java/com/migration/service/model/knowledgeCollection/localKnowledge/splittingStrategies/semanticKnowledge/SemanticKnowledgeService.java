@@ -91,4 +91,19 @@ public class SemanticKnowledgeService {
 	public void deleteAll() {
 		semanticKnowledgeRepository.deleteAll();
 	}
+
+	public void moveKeyword(String keyword, String oldLayer, String newLayer) {
+		this.deleteKeywordInLayer(oldLayer, keyword);
+		this.addKeywordToLayer(keyword, newLayer);
+	}
+
+	public void addKeywordToLayer(String newKeyword, String layer){
+		SemanticKnowledge semanticKnowledgeInstance = semanticKnowledgeRepository.findByName(layer);
+		semanticKnowledgeRepository.delete(semanticKnowledgeInstance);
+		List<String> updatedKeywords = new ArrayList<>();
+		updatedKeywords.addAll(semanticKnowledgeInstance.getKeywords());
+		updatedKeywords.add(newKeyword);
+		semanticKnowledgeInstance.setKeywords(updatedKeywords);
+		semanticKnowledgeRepository.insert(semanticKnowledgeInstance);
+	}
 }
