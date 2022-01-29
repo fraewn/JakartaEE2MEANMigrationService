@@ -5,5 +5,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SemanticKnowledgeRepository extends MongoRepository<SemanticKnowledge, String> {
-
+	public SemanticKnowledge findByName(String name);
 }

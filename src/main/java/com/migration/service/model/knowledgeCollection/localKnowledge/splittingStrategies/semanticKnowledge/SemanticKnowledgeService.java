@@ -5,6 +5,7 @@ import com.migration.service.model.analysis.local.splittingStrategies.semanticAn
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @AllArgsConstructor
@@ -24,7 +25,8 @@ public class SemanticKnowledgeService {
 		semanticKnowledgeRepository.insert(semanticKnowledge);
 	}
 
-	public void update(List<SemanticKnowledge> updatedSemanticKnowledge){
+	// updatedSemanticKnowledge contains only one entry, the changed knowledge for the layer to be updated
+	public void updateOneLayer(List<SemanticKnowledge> updatedSemanticKnowledge){
 		List<SemanticKnowledge> current = getAllSemanticKnowledge();
 		SemanticKnowledge updatedSemanticKnowledgeInstance = updatedSemanticKnowledge.get(0);
 		for(SemanticKnowledge currentSemanticKnowledgeInstance : current){
@@ -34,6 +36,19 @@ public class SemanticKnowledgeService {
 		}
 		semanticKnowledgeRepository.deleteAll();
 		semanticKnowledgeRepository.insert(current);
+	}
+
+	public void deleteKeywordInLayer(String layer, String keyword){
+		SemanticKnowledge semanticKnowledgeInstance = semanticKnowledgeRepository.findByName(layer);
+		semanticKnowledgeRepository.delete(semanticKnowledgeInstance);
+		List<String> updatedKeywords = new ArrayList<>();
+		for(String word : semanticKnowledgeInstance.getKeywords()){
+			if(!keyword.equals(word)){
+				updatedKeywords.add(word);
+			}
+		}
+		semanticKnowledgeInstance.setKeywords(updatedKeywords);
+		semanticKnowledgeRepository.insert(semanticKnowledgeInstance);
 	}
 
 	public void updateKeywordsPerLayer(String layer, List<SemanticAnalysisExtension> semanticAnalysisExtensions){
@@ -66,6 +81,11 @@ public class SemanticKnowledgeService {
 		semanticKnowledgeRepository.insert(current);
 	}
 
+	public void deleteLayer(String layer){
+		SemanticKnowledge semanticKnowledgeForLayer =
+				semanticKnowledgeRepository.findByName(layer);
+		semanticKnowledgeRepository.delete(semanticKnowledgeForLayer);
+	}
 
 
 	public void deleteAll() {

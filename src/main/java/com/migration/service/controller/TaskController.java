@@ -9,7 +9,6 @@ import com.migration.service.model.knowledgeCollection.globalKnowledge.NodeKnowl
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledgeService;
 import lombok.AllArgsConstructor;
-import org.apache.tomcat.jni.Global;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +24,7 @@ public class TaskController {
 	private final GlobalAnalysis globalAnalysis;
 	private final NodeKnowledgeService nodeKnowledgeService;
 
+	// only for testing
 	@GetMapping("/semanticKnowledge/show")
 	@ResponseBody
 	public List<SemanticKnowledge> fetchAllSemanticKnowledge(){
@@ -36,6 +36,7 @@ public class TaskController {
 		return semanticKnowledgeList;
 	}
 
+	// only for testing
 	@PostMapping("/semanticKnowledge/insert")
 	public ResponseEntity<String> insertSemanticKnowledge(@RequestBody SemanticKnowledge semanticKnowledge){
 		semanticKnowledgeService.insert(semanticKnowledge);
@@ -46,7 +47,7 @@ public class TaskController {
 	@GetMapping("/semanticAnalysis/current")
 	public ResponseEntity<List<SemanticKnowledge>> getCurrentSemanticKnowledge(){
 		List<SemanticKnowledge> semanticKnowledge = semanticKnowledgeService.getAllSemanticKnowledge();
-		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledgeService.getAllSemanticKnowledge(), HttpStatus.OK);
+		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledge, HttpStatus.OK);
 	}
 
 	@CrossOrigin(origins = "http://localhost:4200")
@@ -65,7 +66,7 @@ public class TaskController {
 		List<SemanticKnowledge> updatedSemanticKnowledge = semanticAnalysis.executeSemanticAnalysisForOneLayer(
 						semanticAnalysisExtension,
 						layer);
-		semanticKnowledgeService.update(updatedSemanticKnowledge);
+		semanticKnowledgeService.updateOneLayer(updatedSemanticKnowledge);
 		List<SemanticKnowledge> semanticKnowledge = semanticKnowledgeService.getAllSemanticKnowledge();
 		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledge, HttpStatus.OK);
 	}
@@ -76,7 +77,7 @@ public class TaskController {
 															   @RequestBody List<SemanticAnalysisExtension> semanticAnalysisExtension){
 		List<SemanticKnowledge> updatedSemanticKnowledge =
 				semanticAnalysis.executeSemanticAnalysisForOneLayerExtended(semanticAnalysisExtension, layer);
-		semanticKnowledgeService.update(updatedSemanticKnowledge);
+		semanticKnowledgeService.updateOneLayer(updatedSemanticKnowledge);
 		List<SemanticKnowledge> semanticKnowledge = semanticKnowledgeService.getAllSemanticKnowledge();
 		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledge, HttpStatus.OK);
 	}
@@ -86,6 +87,30 @@ public class TaskController {
 	public ResponseEntity<List<SemanticKnowledge>> saveAll(@RequestParam String layer,
 																				@RequestBody List<SemanticAnalysisExtension> semanticAnalysisExtension){
 		semanticKnowledgeService.updateKeywordsPerLayer(layer, semanticAnalysisExtension);
+		List<SemanticKnowledge> semanticKnowledge = semanticKnowledgeService.getAllSemanticKnowledge();
+		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledge, HttpStatus.OK);
+	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
+	@DeleteMapping("/semanticAnalysis/deleteLayer")
+	public ResponseEntity<List<SemanticKnowledge>> semanticAnalysisdeleteLayer(@RequestParam String layer){
+		semanticKnowledgeService.deleteLayer(layer);
+		List<SemanticKnowledge> semanticKnowledge = semanticKnowledgeService.getAllSemanticKnowledge();
+		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledge, HttpStatus.OK);
+	}
+
+	//@CrossOrigin(origins = "http://localhost:4200")
+	@DeleteMapping("/semanticAnalysis/deleteAll")
+	public ResponseEntity<List<SemanticKnowledge>> semanticAnalysisdeleteAll(){
+		semanticKnowledgeService.deleteAll();
+		List<SemanticKnowledge> semanticKnowledge = semanticKnowledgeService.getAllSemanticKnowledge();
+		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledge, HttpStatus.OK);
+	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
+	@DeleteMapping("/semanticAnalysis/deleteKeywordInLayer")
+	public ResponseEntity<List<SemanticKnowledge>> semanticAnalysisdeleteKeywordInLayer(@RequestParam String layer, String keyword){
+		semanticKnowledgeService.deleteKeywordInLayer(layer, keyword);
 		List<SemanticKnowledge> semanticKnowledge = semanticKnowledgeService.getAllSemanticKnowledge();
 		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledge, HttpStatus.OK);
 	}
