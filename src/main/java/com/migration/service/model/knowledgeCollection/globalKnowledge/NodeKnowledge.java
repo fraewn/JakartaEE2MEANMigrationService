@@ -22,10 +22,20 @@ public class NodeKnowledge {
 	private boolean classIsEntity;
 	private String representedEntity;
 
+	private List<String> keywords;
+	private List<String> associatedLayers;
+
+	private String calculatedInterpretation;
 	private boolean reviewNecessary;
 	private String review;
 
-	private List<String> keywords;
+
+	// is set in frontend by
+	private String representedMeanModuleType;
+	private String associatedMeanModuleType;
+
+
+
 
 	public boolean containsLabel(String label){
 		Boolean comparison = false;
@@ -36,6 +46,7 @@ public class NodeKnowledge {
 		}
 		return comparison;
 	}
+
 	public String getName() { return name; }
 
 	public void setName(String name) {
@@ -70,9 +81,7 @@ public class NodeKnowledge {
 		return betweennessCentralityScore;
 	}
 
-	public void setBetweennessCentralityScore(double betweennessCentralityScore) {
-		this.betweennessCentralityScore = betweennessCentralityScore;
-	}
+	public void setBetweennessCentralityScore(double betweennessCentralityScore) { this.betweennessCentralityScore = betweennessCentralityScore; }
 
 	public double getPageRankScore() {
 		return pageRankScore;
@@ -106,6 +115,10 @@ public class NodeKnowledge {
 		this.representedEntity = representedEntity;
 	}
 
+	public String getCalculatedInterpretation() { return calculatedInterpretation; }
+
+	public void setCalculatedInterpretation(String calculatedInterpretation) { this.calculatedInterpretation = calculatedInterpretation; }
+
 	public boolean isReviewNecessary() {
 		return reviewNecessary;
 	}
@@ -129,4 +142,26 @@ public class NodeKnowledge {
 	public void setKeywords(List<String> keywords) {
 		this.keywords = keywords;
 	}
+
+	public List<String> getAssociatedLayers() { return associatedLayers; }
+
+	public void setAssociatedLayers(List<String> associatedLayers) { this.associatedLayers = associatedLayers; }
+
+	public String getRepresentedMeanModuleType() {
+		return representedMeanModuleType;
+	}
+
+	public void setRepresentedMeanModuleType(String representedMeanModuleType) {
+		this.representedMeanModuleType = representedMeanModuleType;
+	}
+
+	public String getAssociatedMeanModuleType() {
+		return associatedMeanModuleType;
+	}
+
+	public void setAssociatedMeanModuleType(String associatedMeanModuleType) {
+		this.associatedMeanModuleType = associatedMeanModuleType;
+	}
+
+
 }

@@ -1,6 +1,5 @@
 package com.migration.service.controller;
 
-
 import com.migration.service.model.analysis.global.GlobalAnalysis;
 import com.migration.service.model.analysis.local.splittingStrategies.semanticAnalysis.SemanticAnalysis;
 import com.migration.service.model.analysis.local.splittingStrategies.semanticAnalysis.SemanticAnalysisExtension;
@@ -8,6 +7,8 @@ import com.migration.service.model.knowledgeCollection.globalKnowledge.NodeKnowl
 import com.migration.service.model.knowledgeCollection.globalKnowledge.NodeKnowledgeService;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledgeService;
+import com.migration.service.model.knowledgeCollection.utilKnowledge.UtilKnowledge;
+import com.migration.service.model.knowledgeCollection.utilKnowledge.UtilKnowledgeService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ public class TaskController {
 	private final SemanticAnalysis semanticAnalysis;
 	private final GlobalAnalysis globalAnalysis;
 	private final NodeKnowledgeService nodeKnowledgeService;
+	private final UtilKnowledgeService utilKnowledgeService;
 
 	// only for testing
 	@GetMapping("/semanticKnowledge/show")
@@ -124,11 +126,27 @@ public class TaskController {
 		return new ResponseEntity<List<SemanticKnowledge>>(semanticKnowledge, HttpStatus.OK);
 	}
 
+	@CrossOrigin(origins = "http://localhost:4200")
 	@GetMapping("/globalAnalyses")
 	public ResponseEntity<String> callGlobalAnalyses(){
 		List<NodeKnowledge> nodeKnowledge = globalAnalysis.executeGlobalAnalyses();
+		nodeKnowledgeService.deleteAll();
 		nodeKnowledgeService.insertAll(nodeKnowledge);
 		return new ResponseEntity<>("Global Analyses were executed", HttpStatus.OK);
 	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/globalAnalyses/knowledge")
+	public ResponseEntity<List<NodeKnowledge>> requestNodeKnowledge(){
+		return new ResponseEntity<List<NodeKnowledge>>(nodeKnowledgeService.findAll(), HttpStatus.OK);
+	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/utilKnowledge")
+	public ResponseEntity<List<UtilKnowledge>> getUtilKnowledge(){
+		return new ResponseEntity<List<UtilKnowledge>>(utilKnowledgeService.findAll(), HttpStatus.OK);
+	}
+
+
 
 }

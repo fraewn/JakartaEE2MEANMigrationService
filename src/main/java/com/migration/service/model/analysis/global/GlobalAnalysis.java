@@ -1,16 +1,20 @@
 package com.migration.service.model.analysis.global;
 
-import com.migration.service.model.analysis.Util.TriangleCountResult;
 import com.migration.service.model.knowledgeCollection.globalKnowledge.NodeKnowledge;
+import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
+import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledgeService;
+import com.migration.service.model.knowledgeCollection.utilKnowledge.UtilKnowledge;
+import com.migration.service.model.knowledgeCollection.utilKnowledge.UtilKnowledgeService;
 import org.neo4j.driver.*;
 import org.springframework.stereotype.Component;
-import org.w3c.dom.Node;
 
 import java.util.*;
 
 @Component
 public class GlobalAnalysis {
 
+	private final SemanticKnowledgeService semanticKnowledgeService;
+	private final UtilKnowledgeService utilKnowledgeService;
 	//private List<Pair<String, Value>> triangleCountResults;
 
 	private String pageRankQuery = "CALL algo.pageRank.stream(null, null, " +
@@ -32,8 +36,24 @@ public class GlobalAnalysis {
 			"return algo.getNodeById(nodeId).name as name, coefficient as score";
 
 	private final Driver driver;
-	public GlobalAnalysis(Driver driver) {
+	public GlobalAnalysis(Driver driver, SemanticKnowledgeService semanticKnowledgeService, UtilKnowledgeService utilKnowledgeService) {
 		this.driver = driver;
+		this.semanticKnowledgeService = semanticKnowledgeService;
+		this.utilKnowledgeService = utilKnowledgeService;
+		this.setUp();
+	}
+
+	public void setUp(){
+		// set allowed MEAN Module types (static)
+		List<UtilKnowledge> utilKnowledgeList = new ArrayList<>();
+		List<String> allowedMeanModuleTypes = new ArrayList<>();
+		allowedMeanModuleTypes.add("cross section");
+		allowedMeanModuleTypes.add("functional");
+		allowedMeanModuleTypes.add("wrapper");
+		UtilKnowledge utilKnowledge = new UtilKnowledge();
+		utilKnowledge.setAllowedMeanModuleTypes(allowedMeanModuleTypes);
+		utilKnowledgeList.add(utilKnowledge);
+		utilKnowledgeService.insertAll(utilKnowledgeList);
 	}
 
 	public List<NodeKnowledge> executeGlobalAnalyses() {
@@ -67,12 +87,59 @@ public class GlobalAnalysis {
 			}
 			if(nodeKnowledgeInstance.isClassIsEntity()){
 				nodeKnowledgeInstance.setRepresentedEntity(getEntity(nodeName));
-				System.out.println(nodeKnowledgeInstance.getRepresentedEntity());
 			}
+			List<SemanticKnowledge> semanticKnowledgePerLayer = semanticKnowledgeService.getAllSemanticKnowledge();
+			List<String> keywords = new ArrayList<>();
+			List<String> associatedLayers = new ArrayList<>();
+			for(SemanticKnowledge semanticKnowledgeLayer: semanticKnowledgePerLayer){
+				for(String keyword: semanticKnowledgeLayer.getKeywords()){
+					if(nodeKnowledgeInstance.getName().toLowerCase().contains(keyword.toLowerCase())){
+						if(!keywords.contains(keyword)) {
+							keywords.add(keyword);
+						}
+						if(!associatedLayers.contains(semanticKnowledgeLayer.getName())){
+							associatedLayers.add(semanticKnowledgeLayer.getName());
+						}
+					}
+				}
+				nodeKnowledgeInstance.setKeywords(keywords);
+				nodeKnowledgeInstance.setAssociatedLayers(associatedLayers);
+			}
+
+			calculateInterpretation(nodeKnowledgeInstance);
+			System.out.println(nodeKnowledgeInstance.getName() + " " + nodeKnowledgeInstance.getLabel() + " " + nodeKnowledgeInstance.getCalculatedInterpretation());
+
 			nodeKnowledge.add(nodeKnowledgeInstance);
 		}
 		return nodeKnowledge;
 	}
+
+
+	public void calculateInterpretation(NodeKnowledge nodeKnowledgeInstance){
+		if(nodeKnowledgeInstance.isClassIsEntity() || nodeKnowledgeInstance.containsLabel("Entity")){
+			nodeKnowledgeInstance.setCalculatedInterpretation("Entity Class");
+		}
+		else if(nodeKnowledgeInstance.containsLabel("Entity")){
+			nodeKnowledgeInstance.setCalculatedInterpretation("Entity");
+		}
+		else if(nodeKnowledgeInstance.containsLabel("AbstractClass")){
+			nodeKnowledgeInstance.setCalculatedInterpretation("Abstract");
+		}
+		else if(nodeKnowledgeInstance.containsLabel("Interface")){
+			nodeKnowledgeInstance.setCalculatedInterpretation("Interface");
+		}
+		else if(nodeKnowledgeInstance.containsLabel("Layer")){
+			nodeKnowledgeInstance.setCalculatedInterpretation("Layer");
+		}
+		else if(nodeKnowledgeInstance.containsLabel("Resource")){
+			nodeKnowledgeInstance.setCalculatedInterpretation("External Resource");
+		}
+		else{
+			nodeKnowledgeInstance.setCalculatedInterpretation("");
+		}
+	}
+
+
 
 	public List<NodeKnowledge> checkIfReviewIsNecessary(List<NodeKnowledge> nodeKnowledge){
 		for(NodeKnowledge nodeKnowledgeInstance : nodeKnowledge){

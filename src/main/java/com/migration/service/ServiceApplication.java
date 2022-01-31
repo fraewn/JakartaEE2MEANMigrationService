@@ -2,6 +2,9 @@ package com.migration.service;
 
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledgeRepository;
+import com.migration.service.model.knowledgeCollection.utilKnowledge.UtilKnowledge;
+import com.migration.service.model.knowledgeCollection.utilKnowledge.UtilKnowledgeService;
+import lombok.AllArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -10,18 +13,18 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
+import java.util.ArrayList;
 import java.util.List;
 
+@AllArgsConstructor
 @SpringBootApplication
 public class ServiceApplication {
 
 	public static void main(String[] args) {
-
 		SpringApplication.run(ServiceApplication.class, args);
-
-
-
 	}
+
+
 
 	/*@Bean
 	CommandLineRunner runner(SemanticKnowledgeRepository semanticKnowledgeRepository, MongoTemplate mongoTemplate) {
