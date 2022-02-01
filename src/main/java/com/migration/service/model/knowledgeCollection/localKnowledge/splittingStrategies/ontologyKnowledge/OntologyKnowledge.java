@@ -11,6 +11,10 @@ public class OntologyKnowledge {
 	String javaEEComponent;
 	String description;
 	String associatedKeyword;
+	/*String MEANLocation;
+	String MEANComponent;
+	boolean externalLibraryNecessary;
+	String defaultLibrary;*/
 
 	public OntologyKnowledge(){}
 
@@ -52,4 +56,6 @@ public class OntologyKnowledge {
 	public void setAssociatedKeyword(String associatedKeyword) {
 		this.associatedKeyword = associatedKeyword;
 	}
+
+
 }

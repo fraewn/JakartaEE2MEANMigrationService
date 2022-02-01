@@ -1,6 +1,9 @@
 package com.migration.service.model.analysis.global;
 
 import com.migration.service.model.knowledgeCollection.globalKnowledge.NodeKnowledge;
+import com.migration.service.model.knowledgeCollection.globalKnowledge.NodeKnowledgeService;
+import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.ontologyKnowledge.OntologyKnowledge;
+import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.ontologyKnowledge.OntologyKnowledgeService;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledgeService;
 import com.migration.service.model.knowledgeCollection.utilKnowledge.UtilKnowledge;
@@ -15,6 +18,8 @@ public class GlobalAnalysis {
 
 	private final SemanticKnowledgeService semanticKnowledgeService;
 	private final UtilKnowledgeService utilKnowledgeService;
+	private final NodeKnowledgeService nodeKnowledgeService;
+	private final OntologyKnowledgeService ontologyKnowledgeService;
 	//private List<Pair<String, Value>> triangleCountResults;
 
 	private String pageRankQuery = "CALL algo.pageRank.stream(null, null, " +
@@ -36,10 +41,13 @@ public class GlobalAnalysis {
 			"return algo.getNodeById(nodeId).name as name, coefficient as score";
 
 	private final Driver driver;
-	public GlobalAnalysis(Driver driver, SemanticKnowledgeService semanticKnowledgeService, UtilKnowledgeService utilKnowledgeService) {
+	public GlobalAnalysis(Driver driver, SemanticKnowledgeService semanticKnowledgeService, UtilKnowledgeService utilKnowledgeService,
+						  NodeKnowledgeService nodeKnowledgeService, OntologyKnowledgeService ontologyKnowledgeService) {
 		this.driver = driver;
 		this.semanticKnowledgeService = semanticKnowledgeService;
 		this.utilKnowledgeService = utilKnowledgeService;
+		this.nodeKnowledgeService = nodeKnowledgeService;
+		this.ontologyKnowledgeService = ontologyKnowledgeService;
 		this.setUp();
 	}
 
@@ -54,6 +62,37 @@ public class GlobalAnalysis {
 		utilKnowledge.setAllowedMeanModuleTypes(allowedMeanModuleTypes);
 		utilKnowledgeList.add(utilKnowledge);
 		utilKnowledgeService.insertAll(utilKnowledgeList);
+	}
+
+	public List<NodeKnowledge> calculateInterpretation(){
+		List<NodeKnowledge> nodeKnowledge = nodeKnowledgeService.findAll();
+		for(NodeKnowledge nodeKnowledgeInstance : nodeKnowledge){
+			List<String> labels = nodeKnowledgeInstance.getLabel();
+			boolean eligableForRecommendation = false;
+			for(String label : labels){
+				if(!label.equals("Entity") && !label.equals("AbstractClass") && !label.equals("Interface") && !label.equals(
+						"Functionality") && !label.equals("Resource") && !label.equals("Library")){
+					eligableForRecommendation = true;
+				}
+			}
+			for(String keyword : nodeKnowledgeInstance.getKeywords()){
+				OntologyKnowledge ontologyKnowledge = ontologyKnowledgeService.findByAssociatedKeyword(keyword);
+				if(!ontologyKnowledge.equals(null)){
+					nodeKnowledgeInstance.setCalculatedInterpretation(ontologyKnowledge.getJavaEEComponent());
+					eligableForRecommendation = false;
+				}
+			}
+			if(nodeKnowledgeInstance.getBetweennessCentralityScore()>10 && eligableForRecommendation){
+				// TODO cross section module becomes a javaEEComponent
+				nodeKnowledgeInstance.setCalculatedInterpretation("Cross Section Module");
+			}
+			// TODO matching to the javaEE components here
+			// TODO adding meanmodules to ontologyKnowledge
+		}
+
+
+
+		return nodeKnowledge;
 	}
 
 	public List<NodeKnowledge> executeGlobalAnalyses() {

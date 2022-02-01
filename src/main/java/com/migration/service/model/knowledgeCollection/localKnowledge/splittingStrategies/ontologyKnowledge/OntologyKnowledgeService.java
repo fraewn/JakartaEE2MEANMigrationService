@@ -27,6 +27,10 @@ public class OntologyKnowledgeService {
 		ontologyKnowledgeRepository.deleteAll();
 	}
 
+	public OntologyKnowledge findByAssociatedKeyword(String associatedKeyword){
+		return ontologyKnowledgeRepository.findByAssociatedKeyword(associatedKeyword);
+	}
+
 	public void associateKeyword(String keyword, String javaEEComponent){
 		OntologyKnowledge ontologyKnowledge = ontologyKnowledgeRepository.findByJavaEEComponent(javaEEComponent);
 		ontologyKnowledgeRepository.delete(ontologyKnowledge);
@@ -40,6 +44,11 @@ public class OntologyKnowledgeService {
 		if(ontologyKnowledgeRepository.findAll().size()==0) {
 			// das hier nur machen, wenn die nicht bereits mit keywords gefüllt sind!
 			List<OntologyKnowledge> ontologyKnowledge = new ArrayList<>();
+			ontologyKnowledge.add(new OntologyKnowledge("Persistence Layer", "Database Entity", "Representation of the entity in the " +
+					"database" +
+					"for an entity", ""));
+			ontologyKnowledge.add(new OntologyKnowledge("Persistence Layer", "Entity", "Object representation of the entity " +
+					"for an entity", ""));
 			ontologyKnowledge.add(new OntologyKnowledge("Persistence Layer", "Service", "Enables direct access to data processing " +
 					"for an entity", ""));
 			ontologyKnowledge.add(new OntologyKnowledge("Persistence Layer", "Service Interface", "Encapsulates access to data processing " +
@@ -56,6 +65,8 @@ public class OntologyKnowledgeService {
 			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "Authentication Management", "Authentication mechanisms", ""));
 			ontologyKnowledge.add(new OntologyKnowledge("Presentation Layer", "Views", "View design", ""));
 			ontologyKnowledge.add(new OntologyKnowledge("Presentation Layer", "Controller", "View logic, controlling of calls to other layers",
+					""));
+			ontologyKnowledge.add(new OntologyKnowledge("", "Cross Section", "functionality used by all layers, e.g. logging",
 					""));
 			this.insertAll(ontologyKnowledge);
 		}
