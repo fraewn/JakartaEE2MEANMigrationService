@@ -1,6 +1,8 @@
 package com.migration.service.model.analysis.local.splittingStrategies.semanticAnalysis;
 
+import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.ontologyKnowledge.OntologyKnowledgeService;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
+import lombok.AllArgsConstructor;
 import org.neo4j.driver.*;
 import org.springframework.stereotype.Component;
 
@@ -11,8 +13,12 @@ import java.util.List;
 @Component
 public class SemanticAnalysis {
 	private final Driver driver;
-	public SemanticAnalysis(Driver driver) {
+	private OntologyKnowledgeService ontologyKnowledgeService;
+	public SemanticAnalysis(Driver driver, OntologyKnowledgeService ontologyKnowledgeService) {
 		this.driver = driver;
+		// if semantic analysis is used, set up ontology
+		this.ontologyKnowledgeService = ontologyKnowledgeService;
+		ontologyKnowledgeService.setUp();
 	}
 
 	// Klasse soll mir aus neo4j die Daten besorgen für die semantische analyse

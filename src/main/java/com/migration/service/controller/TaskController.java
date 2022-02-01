@@ -5,6 +5,8 @@ import com.migration.service.model.analysis.local.splittingStrategies.semanticAn
 import com.migration.service.model.analysis.local.splittingStrategies.semanticAnalysis.SemanticAnalysisExtension;
 import com.migration.service.model.knowledgeCollection.globalKnowledge.NodeKnowledge;
 import com.migration.service.model.knowledgeCollection.globalKnowledge.NodeKnowledgeService;
+import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.ontologyKnowledge.OntologyKnowledge;
+import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.ontologyKnowledge.OntologyKnowledgeService;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledgeService;
 import com.migration.service.model.knowledgeCollection.utilKnowledge.UtilKnowledge;
@@ -25,6 +27,7 @@ public class TaskController {
 	private final GlobalAnalysis globalAnalysis;
 	private final NodeKnowledgeService nodeKnowledgeService;
 	private final UtilKnowledgeService utilKnowledgeService;
+	private final OntologyKnowledgeService ontologyKnowledgeService;
 
 	// only for testing
 	@GetMapping("/semanticKnowledge/show")
@@ -146,6 +149,24 @@ public class TaskController {
 	public ResponseEntity<List<UtilKnowledge>> getUtilKnowledge(){
 		return new ResponseEntity<List<UtilKnowledge>>(utilKnowledgeService.findAll(), HttpStatus.OK);
 	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/ontologyKnowledge")
+	public ResponseEntity<List<OntologyKnowledge>> getOntologyKnowledge(){
+		return new ResponseEntity<List<OntologyKnowledge>>(ontologyKnowledgeService.findAll(), HttpStatus.OK);
+	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/ontologyKnowledge/associateKeyword")
+	public ResponseEntity<List<OntologyKnowledge>> semanticAnalysisMoveKeyword(@RequestParam String keyword, String javaEEComponent){
+		ontologyKnowledgeService.associateKeyword(keyword, javaEEComponent);
+		List<OntologyKnowledge> ontologyKnowledge = ontologyKnowledgeService.findAll();
+		return new ResponseEntity<List<OntologyKnowledge>>(ontologyKnowledge, HttpStatus.OK);
+	}
+
+
+
+
 
 
 
