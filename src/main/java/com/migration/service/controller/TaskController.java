@@ -165,6 +165,13 @@ public class TaskController {
 	}
 
 
+	@GetMapping("/test")
+	public ResponseEntity<List<String>> semanticAnalysisMoveKeyword(@RequestParam String nodeName){
+		List<String> funcs = globalAnalysis.getFunctionalitiesForANode(nodeName);
+		return new ResponseEntity<List<String>>(funcs, HttpStatus.OK);
+	}
+
+
 
 
 

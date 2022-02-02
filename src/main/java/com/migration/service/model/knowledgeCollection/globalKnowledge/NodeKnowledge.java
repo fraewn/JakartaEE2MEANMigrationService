@@ -21,15 +21,21 @@ public class NodeKnowledge {
 
 	private boolean classIsEntity;
 	private String representedEntity;
+	private List<String> associatedLayers;
+	private List<String> functionalities;
 
 	private List<String> keywords;
-	private List<String> associatedLayers;
 
+
+	// becomes the JavaEEComponent
 	private String calculatedInterpretation;
+	// if abstract/entity etc no, but if based on the global algorithms, then yes
 	private boolean reviewNecessary;
+	// this is were the konwledge workers can make comments on the component
 	private String review;
 
 
+	// TODO delete
 	// is set in frontend by
 	private String representedMeanModuleType;
 	private String associatedMeanModuleType;
@@ -163,5 +169,11 @@ public class NodeKnowledge {
 		this.associatedMeanModuleType = associatedMeanModuleType;
 	}
 
+	public List<String> getFunctionalities() {
+		return functionalities;
+	}
 
+	public void setFunctionalities(List<String> functionalities) {
+		this.functionalities = functionalities;
+	}
 }

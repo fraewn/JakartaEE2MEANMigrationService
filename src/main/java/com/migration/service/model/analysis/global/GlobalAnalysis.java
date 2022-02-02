@@ -83,8 +83,17 @@ public class GlobalAnalysis {
 				}
 			}
 			if(nodeKnowledgeInstance.getBetweennessCentralityScore()>10 && eligableForRecommendation){
-				// TODO cross section module becomes a javaEEComponent
-				nodeKnowledgeInstance.setCalculatedInterpretation("Cross Section Module");
+				nodeKnowledgeInstance.setCalculatedInterpretation("Cross Section");
+			}
+			for(OntologyKnowledge ontologyKnowledge : ontologyKnowledgeService.findAll()){
+				for(String functionality : nodeKnowledgeInstance.getFunctionalities()){
+					List<OntologyKnowledge> ontologyKnowledgeList = ontologyKnowledgeService.findAll();
+					for(OntologyKnowledge ontologyKnowledgeInstance : ontologyKnowledgeList){
+						if(functionality.contains(ontologyKnowledgeInstance.getKnowledgeSource())){
+							nodeKnowledgeInstance.setCalculatedInterpretation(ontologyKnowledgeInstance.getJavaEEComponent());
+						}
+					}
+				}
 			}
 			// TODO matching to the javaEE components here
 			// TODO adding meanmodules to ontologyKnowledge
@@ -111,6 +120,7 @@ public class GlobalAnalysis {
 			NodeKnowledge nodeKnowledgeInstance = new NodeKnowledge();
 			nodeKnowledgeInstance.setName(nodeName);
 			nodeKnowledgeInstance.setLabel(nodeLabels.get(nodeName));
+			nodeKnowledgeInstance.setFunctionalities(this.getFunctionalitiesForANode(nodeName));
 
 			// global Strategies
 			nodeKnowledgeInstance.setTriangleScore(triangleCountAnalysisResults.get(nodeName));
@@ -151,6 +161,24 @@ public class GlobalAnalysis {
 			nodeKnowledge.add(nodeKnowledgeInstance);
 		}
 		return nodeKnowledge;
+	}
+
+	public List<String> getFunctionalitiesForANode(String nodeName){
+		List<String> functionalities = new ArrayList<>();
+		try(Session session = driver.session()){
+
+			for(Record r : session.run("MATCH (n {name:'" + nodeName + "'}) return n.imports").list()){
+				if(r.get(0).isNull()) {
+					functionalities.add("");
+				}
+				else {
+					for (Object o : r.get(0).asList()) {
+						functionalities.add(o.toString());
+					}
+				}
+			}
+			return functionalities;
+		}
 	}
 
 
