@@ -50,7 +50,7 @@ public class GlobalAnalysis {
 	}
 
 	public void setUp(){
-		// ontologyKnowledgeService.setUp();
+		//ontologyKnowledgeService.setUp();
 	}
 
 	public List<NodeKnowledge> calculateInterpretation(List<NodeKnowledge> nodeKnowledgeList){
@@ -59,7 +59,7 @@ public class GlobalAnalysis {
 				List<String> calculatedInterpretations = new ArrayList<>();
 				List<String> labels = nodeKnowledgeInstance.getLabel();
 				// node is not a java class
-				if(!labels.contains("JavaImplementation")){
+				if(!labels.contains("JavaImplementation") && !labels.contains("Interface")){
 					for (String label : labels) {
 						calculatedInterpretations.add(label);
 					}
@@ -67,6 +67,9 @@ public class GlobalAnalysis {
 				// node is a java class
 				else {
 					List<String> keywords = nodeKnowledgeInstance.getKeywords();
+					if(labels.contains("Enum")){
+						calculatedInterpretations.add("Enum");
+					}
 					if (nodeKnowledgeInstance.isClassIsEntity()) {
 						calculatedInterpretations.add("Entity Implementation");
 					}
@@ -83,6 +86,7 @@ public class GlobalAnalysis {
 					else if (nodeKnowledgeInstance.getBetweennessCentralityScore() > 10) {
 						calculatedInterpretations.add("Cross Section");
 					}
+
 					List<OntologyKnowledge> ontologyKnowledgeList = ontologyKnowledgeService.findAll();
 					for (String functionality : nodeKnowledgeInstance.getFunctionalities()) {
 						for (OntologyKnowledge ontologyKnowledge : ontologyKnowledgeList) {
@@ -98,6 +102,7 @@ public class GlobalAnalysis {
 					}
 				}
 				if(calculatedInterpretations.size()==0 || calculatedInterpretations.size() > 2){
+					System.out.println(nodeKnowledgeInstance);
 					nodeKnowledgeInstance.setReviewNecessary(true);
 				}
 				else {

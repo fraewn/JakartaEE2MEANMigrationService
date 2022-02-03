@@ -157,6 +157,19 @@ public class TaskController {
 	}
 
 	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/ontologyKnowledge/javaEEcomponents")
+	public ResponseEntity<List<String>> getAllJavaEEComponents(){
+		return new ResponseEntity<List<String>>(ontologyKnowledgeService.getAllJavaEEComponents(), HttpStatus.OK);
+	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/nodeKnowledge/addJavaEEComponent")
+	public ResponseEntity<List<NodeKnowledge>> addJavaEEComponent(@RequestParam String name, String javaEEComponent){
+		nodeKnowledgeService.updateJavaEEComponents(name, javaEEComponent);
+		return new ResponseEntity<List<NodeKnowledge>>(nodeKnowledgeService.findAll(), HttpStatus.OK);
+	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
 	@GetMapping("/ontologyKnowledge/associateKeyword")
 	public ResponseEntity<List<OntologyKnowledge>> semanticAnalysisMoveKeyword(@RequestParam String keyword, String javaEEComponent){
 		ontologyKnowledgeService.associateKeyword(keyword, javaEEComponent);

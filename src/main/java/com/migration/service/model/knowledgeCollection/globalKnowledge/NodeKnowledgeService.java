@@ -18,6 +18,16 @@ public class NodeKnowledgeService {
 		nodeKnowledgeRepository.insert(nodeKnowledge);
 	}
 
+	public void updateJavaEEComponents(String name, String javaEEComponent){
+		NodeKnowledge nodeKnowledge = nodeKnowledgeRepository.findByName(name);
+		nodeKnowledgeRepository.delete(nodeKnowledge);
+		List<String> javaEEComponents = nodeKnowledge.getCalculatedInterpretation();
+		javaEEComponents.add(javaEEComponent);
+		nodeKnowledge.setReviewNecessary(false);
+		nodeKnowledge.setCalculatedInterpretation(javaEEComponents);
+		nodeKnowledgeRepository.insert(nodeKnowledge);
+	}
+
 	public void deleteAll(){
 		nodeKnowledgeRepository.deleteAll();
 	}

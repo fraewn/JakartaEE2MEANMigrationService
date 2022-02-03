@@ -38,6 +38,14 @@ public class OntologyKnowledgeService {
 		ontologyKnowledgeRepository.insert(ontologyKnowledge);
 	}
 
+	public List<String> getAllJavaEEComponents(){
+		List<String> javaEEComponents = new ArrayList<>();
+		for(OntologyKnowledge ontologyKnowledge : ontologyKnowledgeRepository.findAll()){
+			javaEEComponents.add(ontologyKnowledge.getJavaEEComponent());
+		}
+		return javaEEComponents;
+	}
+
 	public void setUp(){
 		deleteAll();
 		if(ontologyKnowledgeRepository.findAll().size()==0) {
@@ -76,8 +84,10 @@ public class OntologyKnowledgeService {
 					"calls to other layers", "", "Frontend", "TS component", true, "Angular Materials"));
 			// hier würde "DataService.java" als Keyword helfen
 			ontologyKnowledge.add(new OntologyKnowledge("Presentation Layer", "","View Data Transformation", "Transforms data from " +
-					"entities in the form the view classes need it", "Object.java", "Frontend", "Service", true ,
-					"HTTP Client, Router, Subject"));
+					"entities in the form the view classes need it", "Object.java", "Frontend", "Service", false ,
+					""));
+			ontologyKnowledge.add(new OntologyKnowledge("Presentation Layer", "","View Data Service", "Processes data coming from/needed " +
+					"by the view classes","DataService.java", "Frontend","Service", true,"HTTP Client, Router, Subject"));
 			ontologyKnowledge.add(new OntologyKnowledge("", "Default Component","Cross Section", "functionality used by all layers, e.g. logging",
 					"", "Frontend/Backend", "Own class", true, "" ));
 			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.enterprise.event","Event Management",
