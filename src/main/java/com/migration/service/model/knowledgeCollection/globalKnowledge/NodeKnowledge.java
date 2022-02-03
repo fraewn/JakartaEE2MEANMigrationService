@@ -28,7 +28,7 @@ public class NodeKnowledge {
 
 
 	// becomes the JavaEEComponent
-	private String calculatedInterpretation;
+	private List<String> calculatedInterpretation;
 	// if abstract/entity etc no, but if based on the global algorithms, then yes
 	private boolean reviewNecessary;
 	// this is were the konwledge workers can make comments on the component
@@ -52,6 +52,8 @@ public class NodeKnowledge {
 		}
 		return comparison;
 	}
+
+
 
 	public String getName() { return name; }
 
@@ -121,9 +123,9 @@ public class NodeKnowledge {
 		this.representedEntity = representedEntity;
 	}
 
-	public String getCalculatedInterpretation() { return calculatedInterpretation; }
+	public List<String> getCalculatedInterpretation() { return calculatedInterpretation; }
 
-	public void setCalculatedInterpretation(String calculatedInterpretation) { this.calculatedInterpretation = calculatedInterpretation; }
+	public void setCalculatedInterpretation(List<String> calculatedInterpretation) { this.calculatedInterpretation = calculatedInterpretation; }
 
 	public boolean isReviewNecessary() {
 		return reviewNecessary;

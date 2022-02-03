@@ -14,6 +14,10 @@ public class NodeKnowledgeService {
 		nodeKnowledgeRepository.insert(nodeKnowledge);
 	}
 
+	public void insert(List<NodeKnowledge> nodeKnowledge){
+		nodeKnowledgeRepository.insert(nodeKnowledge);
+	}
+
 	public void deleteAll(){
 		nodeKnowledgeRepository.deleteAll();
 	}

@@ -3,8 +3,6 @@ package com.migration.service.model.knowledgeCollection.localKnowledge.splitting
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.lang.reflect.Member;
-
 @Document(value="ontologyKnowledge")
 public class OntologyKnowledge {
 	@Id

@@ -17,7 +17,6 @@ import java.util.*;
 public class GlobalAnalysis {
 
 	private final SemanticKnowledgeService semanticKnowledgeService;
-	private final UtilKnowledgeService utilKnowledgeService;
 	private final NodeKnowledgeService nodeKnowledgeService;
 	private final OntologyKnowledgeService ontologyKnowledgeService;
 	//private List<Pair<String, Value>> triangleCountResults;
@@ -41,67 +40,73 @@ public class GlobalAnalysis {
 			"return algo.getNodeById(nodeId).name as name, coefficient as score";
 
 	private final Driver driver;
-	public GlobalAnalysis(Driver driver, SemanticKnowledgeService semanticKnowledgeService, UtilKnowledgeService utilKnowledgeService,
+	public GlobalAnalysis(Driver driver, SemanticKnowledgeService semanticKnowledgeService,
 						  NodeKnowledgeService nodeKnowledgeService, OntologyKnowledgeService ontologyKnowledgeService) {
 		this.driver = driver;
 		this.semanticKnowledgeService = semanticKnowledgeService;
-		this.utilKnowledgeService = utilKnowledgeService;
 		this.nodeKnowledgeService = nodeKnowledgeService;
 		this.ontologyKnowledgeService = ontologyKnowledgeService;
 		this.setUp();
 	}
 
 	public void setUp(){
-		// set allowed MEAN Module types (static)
-		List<UtilKnowledge> utilKnowledgeList = new ArrayList<>();
-		List<String> allowedMeanModuleTypes = new ArrayList<>();
-		allowedMeanModuleTypes.add("cross section");
-		allowedMeanModuleTypes.add("functional");
-		allowedMeanModuleTypes.add("wrapper");
-		UtilKnowledge utilKnowledge = new UtilKnowledge();
-		utilKnowledge.setAllowedMeanModuleTypes(allowedMeanModuleTypes);
-		utilKnowledgeList.add(utilKnowledge);
-		utilKnowledgeService.insertAll(utilKnowledgeList);
+		// ontologyKnowledgeService.setUp();
 	}
 
-	public List<NodeKnowledge> calculateInterpretation(){
-		List<NodeKnowledge> nodeKnowledge = nodeKnowledgeService.findAll();
-		for(NodeKnowledge nodeKnowledgeInstance : nodeKnowledge){
-			List<String> labels = nodeKnowledgeInstance.getLabel();
-			boolean eligableForRecommendation = false;
-			for(String label : labels){
-				if(!label.equals("Entity") && !label.equals("AbstractClass") && !label.equals("Interface") && !label.equals(
-						"Functionality") && !label.equals("Resource") && !label.equals("Library")){
-					eligableForRecommendation = true;
+	public List<NodeKnowledge> calculateInterpretation(List<NodeKnowledge> nodeKnowledgeList){
+			List<NodeKnowledge> nodeKnowledgeWithInterpretations = new ArrayList<>();
+			for(NodeKnowledge nodeKnowledgeInstance : nodeKnowledgeList) {
+				List<String> calculatedInterpretations = new ArrayList<>();
+				List<String> labels = nodeKnowledgeInstance.getLabel();
+				// node is not a java class
+				if(!labels.contains("JavaImplementation")){
+					for (String label : labels) {
+						calculatedInterpretations.add(label);
+					}
 				}
-			}
-			for(String keyword : nodeKnowledgeInstance.getKeywords()){
-				OntologyKnowledge ontologyKnowledge = ontologyKnowledgeService.findByAssociatedKeyword(keyword);
-				if(!ontologyKnowledge.equals(null)){
-					nodeKnowledgeInstance.setCalculatedInterpretation(ontologyKnowledge.getJavaEEComponent());
-					eligableForRecommendation = false;
-				}
-			}
-			if(nodeKnowledgeInstance.getBetweennessCentralityScore()>10 && eligableForRecommendation){
-				nodeKnowledgeInstance.setCalculatedInterpretation("Cross Section");
-			}
-			for(OntologyKnowledge ontologyKnowledge : ontologyKnowledgeService.findAll()){
-				for(String functionality : nodeKnowledgeInstance.getFunctionalities()){
+				// node is a java class
+				else {
+					List<String> keywords = nodeKnowledgeInstance.getKeywords();
+					if (nodeKnowledgeInstance.isClassIsEntity()) {
+						calculatedInterpretations.add("Entity Implementation");
+					}
+					if (labels.contains("AbstractClass") || labels.contains("Interface")) {
+						calculatedInterpretations.add("Abstract/Interface");
+					}
+					// automatic interpretation is only possible with one keyword
+					if (keywords.size() == 1) {
+						OntologyKnowledge ontologyKnowledge = ontologyKnowledgeService.findByAssociatedKeyword(keywords.get(0));
+						if (ontologyKnowledge != null) {
+							calculatedInterpretations.add(ontologyKnowledge.getJavaEEComponent());
+						}
+					}
+					else if (nodeKnowledgeInstance.getBetweennessCentralityScore() > 10) {
+						calculatedInterpretations.add("Cross Section");
+					}
 					List<OntologyKnowledge> ontologyKnowledgeList = ontologyKnowledgeService.findAll();
-					for(OntologyKnowledge ontologyKnowledgeInstance : ontologyKnowledgeList){
-						if(functionality.contains(ontologyKnowledgeInstance.getKnowledgeSource())){
-							nodeKnowledgeInstance.setCalculatedInterpretation(ontologyKnowledgeInstance.getJavaEEComponent());
+					for (String functionality : nodeKnowledgeInstance.getFunctionalities()) {
+						for (OntologyKnowledge ontologyKnowledge : ontologyKnowledgeList) {
+							String knowledgeSource = ontologyKnowledge.getKnowledgeSource();
+							if(!knowledgeSource.equals("Default Component")){
+								if(!knowledgeSource.equals("") && functionality.contains(knowledgeSource)) {
+									if (!calculatedInterpretations.contains(ontologyKnowledge.getJavaEEComponent())) {
+										calculatedInterpretations.add(ontologyKnowledge.getJavaEEComponent());
+									}
+								}
+							}
 						}
 					}
 				}
+				if(calculatedInterpretations.size()==0 || calculatedInterpretations.size() > 2){
+					nodeKnowledgeInstance.setReviewNecessary(true);
+				}
+				else {
+					nodeKnowledgeInstance.setReviewNecessary(false);
+				}
+				nodeKnowledgeInstance.setCalculatedInterpretation(calculatedInterpretations);
+				nodeKnowledgeWithInterpretations.add(nodeKnowledgeInstance);
 			}
-			// TODO matching to the javaEE components here
-			// TODO adding meanmodules to ontologyKnowledge
-		}
-
-
-
-		return nodeKnowledge;
+		return nodeKnowledgeWithInterpretations;
 	}
 
 	public List<NodeKnowledge> executeGlobalAnalyses() {
@@ -154,13 +159,9 @@ public class GlobalAnalysis {
 				nodeKnowledgeInstance.setKeywords(keywords);
 				nodeKnowledgeInstance.setAssociatedLayers(associatedLayers);
 			}
-
-			calculateInterpretation(nodeKnowledgeInstance);
-			System.out.println(nodeKnowledgeInstance.getName() + " " + nodeKnowledgeInstance.getLabel() + " " + nodeKnowledgeInstance.getCalculatedInterpretation());
-
 			nodeKnowledge.add(nodeKnowledgeInstance);
 		}
-		return nodeKnowledge;
+		return calculateInterpretation(nodeKnowledge);
 	}
 
 	public List<String> getFunctionalitiesForANode(String nodeName){
@@ -178,31 +179,6 @@ public class GlobalAnalysis {
 				}
 			}
 			return functionalities;
-		}
-	}
-
-
-	public void calculateInterpretation(NodeKnowledge nodeKnowledgeInstance){
-		if(nodeKnowledgeInstance.isClassIsEntity() || nodeKnowledgeInstance.containsLabel("Entity")){
-			nodeKnowledgeInstance.setCalculatedInterpretation("Entity Class");
-		}
-		else if(nodeKnowledgeInstance.containsLabel("Entity")){
-			nodeKnowledgeInstance.setCalculatedInterpretation("Entity");
-		}
-		else if(nodeKnowledgeInstance.containsLabel("AbstractClass")){
-			nodeKnowledgeInstance.setCalculatedInterpretation("Abstract");
-		}
-		else if(nodeKnowledgeInstance.containsLabel("Interface")){
-			nodeKnowledgeInstance.setCalculatedInterpretation("Interface");
-		}
-		else if(nodeKnowledgeInstance.containsLabel("Layer")){
-			nodeKnowledgeInstance.setCalculatedInterpretation("Layer");
-		}
-		else if(nodeKnowledgeInstance.containsLabel("Resource")){
-			nodeKnowledgeInstance.setCalculatedInterpretation("External Resource");
-		}
-		else{
-			nodeKnowledgeInstance.setCalculatedInterpretation("");
 		}
 	}
 
