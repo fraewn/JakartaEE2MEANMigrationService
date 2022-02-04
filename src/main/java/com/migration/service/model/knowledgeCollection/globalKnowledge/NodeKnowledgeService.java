@@ -3,6 +3,7 @@ package com.migration.service.model.knowledgeCollection.globalKnowledge;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @AllArgsConstructor
@@ -25,6 +26,20 @@ public class NodeKnowledgeService {
 		javaEEComponents.add(javaEEComponent);
 		nodeKnowledge.setReviewNecessary(false);
 		nodeKnowledge.setCalculatedInterpretation(javaEEComponents);
+		nodeKnowledgeRepository.insert(nodeKnowledge);
+	}
+
+	public void deleteJavaEEComponent(String name, String javaEEComponent){
+		NodeKnowledge nodeKnowledge = nodeKnowledgeRepository.findByName(name);
+		nodeKnowledgeRepository.delete(nodeKnowledge);
+		List<String> javaEEComponents = nodeKnowledge.getCalculatedInterpretation();
+		List<String> updatedJavaEEComponents = new ArrayList<>();
+		for(String component : javaEEComponents){
+			if(!component.equals(javaEEComponent)){
+				updatedJavaEEComponents.add(component);
+			}
+		}
+		nodeKnowledge.setCalculatedInterpretation(updatedJavaEEComponents);
 		nodeKnowledgeRepository.insert(nodeKnowledge);
 	}
 

@@ -6,8 +6,6 @@ import com.migration.service.model.knowledgeCollection.localKnowledge.splittingS
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.ontologyKnowledge.OntologyKnowledgeService;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledgeService;
-import com.migration.service.model.knowledgeCollection.utilKnowledge.UtilKnowledge;
-import com.migration.service.model.knowledgeCollection.utilKnowledge.UtilKnowledgeService;
 import org.neo4j.driver.*;
 import org.springframework.stereotype.Component;
 
@@ -83,9 +81,6 @@ public class GlobalAnalysis {
 							calculatedInterpretations.add(ontologyKnowledge.getJavaEEComponent());
 						}
 					}
-					else if (nodeKnowledgeInstance.getBetweennessCentralityScore() > 10) {
-						calculatedInterpretations.add("Cross Section");
-					}
 
 					List<OntologyKnowledge> ontologyKnowledgeList = ontologyKnowledgeService.findAll();
 					for (String functionality : nodeKnowledgeInstance.getFunctionalities()) {
@@ -99,6 +94,9 @@ public class GlobalAnalysis {
 								}
 							}
 						}
+					}
+					if (nodeKnowledgeInstance.getBetweennessCentralityScore() > 10 && calculatedInterpretations.size()==0) {
+						calculatedInterpretations.add("Cross Section");
 					}
 				}
 				if(calculatedInterpretations.size()==0 || calculatedInterpretations.size() > 2){
@@ -209,7 +207,6 @@ public class GlobalAnalysis {
 				}
 			}
 		}
-
 		return nodeKnowledge;
 	}
 

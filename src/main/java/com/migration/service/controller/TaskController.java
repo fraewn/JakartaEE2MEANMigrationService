@@ -9,13 +9,10 @@ import com.migration.service.model.knowledgeCollection.localKnowledge.splittingS
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.ontologyKnowledge.OntologyKnowledgeService;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledgeService;
-import com.migration.service.model.knowledgeCollection.utilKnowledge.UtilKnowledge;
-import com.migration.service.model.knowledgeCollection.utilKnowledge.UtilKnowledgeService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -26,7 +23,6 @@ public class TaskController {
 	private final SemanticAnalysis semanticAnalysis;
 	private final GlobalAnalysis globalAnalysis;
 	private final NodeKnowledgeService nodeKnowledgeService;
-	private final UtilKnowledgeService utilKnowledgeService;
 	private final OntologyKnowledgeService ontologyKnowledgeService;
 
 	// only for testing
@@ -145,12 +141,6 @@ public class TaskController {
 	}
 
 	@CrossOrigin(origins = "http://localhost:4200")
-	@GetMapping("/utilKnowledge")
-	public ResponseEntity<List<UtilKnowledge>> getUtilKnowledge(){
-		return new ResponseEntity<List<UtilKnowledge>>(utilKnowledgeService.findAll(), HttpStatus.OK);
-	}
-
-	@CrossOrigin(origins = "http://localhost:4200")
 	@GetMapping("/ontologyKnowledge")
 	public ResponseEntity<List<OntologyKnowledge>> getOntologyKnowledge(){
 		return new ResponseEntity<List<OntologyKnowledge>>(ontologyKnowledgeService.findAll(), HttpStatus.OK);
@@ -170,12 +160,21 @@ public class TaskController {
 	}
 
 	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/nodeKnowledge/deleteJavaEEComponent")
+	public ResponseEntity<List<NodeKnowledge>> deleteJavaEEComponent(@RequestParam String name, String javaEEComponent){
+		nodeKnowledgeService.deleteJavaEEComponent(name, javaEEComponent);
+		return new ResponseEntity<List<NodeKnowledge>>(nodeKnowledgeService.findAll(), HttpStatus.OK);
+	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
 	@GetMapping("/ontologyKnowledge/associateKeyword")
 	public ResponseEntity<List<OntologyKnowledge>> semanticAnalysisMoveKeyword(@RequestParam String keyword, String javaEEComponent){
 		ontologyKnowledgeService.associateKeyword(keyword, javaEEComponent);
 		List<OntologyKnowledge> ontologyKnowledge = ontologyKnowledgeService.findAll();
 		return new ResponseEntity<List<OntologyKnowledge>>(ontologyKnowledge, HttpStatus.OK);
 	}
+
+
 
 
 	@GetMapping("/test")

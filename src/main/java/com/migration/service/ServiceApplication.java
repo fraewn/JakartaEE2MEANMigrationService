@@ -2,8 +2,7 @@ package com.migration.service;
 
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledgeRepository;
-import com.migration.service.model.knowledgeCollection.utilKnowledge.UtilKnowledge;
-import com.migration.service.model.knowledgeCollection.utilKnowledge.UtilKnowledgeService;
+
 import lombok.AllArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
