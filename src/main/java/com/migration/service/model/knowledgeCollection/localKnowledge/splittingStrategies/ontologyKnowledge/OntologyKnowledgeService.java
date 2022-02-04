@@ -31,6 +31,10 @@ public class OntologyKnowledgeService {
 		return ontologyKnowledgeRepository.findByAssociatedKeyword(associatedKeyword);
 	}
 
+	public OntologyKnowledge findByJavaEEComponent(String javaEEComponent){
+		return ontologyKnowledgeRepository.findByJavaEEComponent(javaEEComponent);
+	}
+
 	public void associateKeyword(String keyword, String javaEEComponent){
 		OntologyKnowledge ontologyKnowledge = ontologyKnowledgeRepository.findByJavaEEComponent(javaEEComponent);
 		ontologyKnowledgeRepository.delete(ontologyKnowledge);

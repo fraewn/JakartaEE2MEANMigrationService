@@ -29,6 +29,10 @@ public class NodeKnowledgeService {
 		nodeKnowledgeRepository.insert(nodeKnowledge);
 	}
 
+	public NodeKnowledge findByName(String name){
+		return nodeKnowledgeRepository.findByName(name);
+	}
+
 	public void deleteJavaEEComponent(String name, String javaEEComponent){
 		NodeKnowledge nodeKnowledge = nodeKnowledgeRepository.findByName(name);
 		nodeKnowledgeRepository.delete(nodeKnowledge);
