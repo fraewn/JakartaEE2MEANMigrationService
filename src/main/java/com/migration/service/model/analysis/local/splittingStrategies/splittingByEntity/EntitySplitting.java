@@ -59,7 +59,6 @@ public class EntitySplitting {
 		System.out.println(sortedOut);
 		module.removeAll(sortedOut);
 
-
 		return module;
 	}
 

@@ -185,31 +185,6 @@ public class GlobalAnalysis {
 		}
 	}
 
-
-
-	public List<NodeKnowledge> checkIfReviewIsNecessary(List<NodeKnowledge> nodeKnowledge){
-		for(NodeKnowledge nodeKnowledgeInstance : nodeKnowledge){
-			nodeKnowledgeInstance.setReviewNecessary(false);
-			if(nodeKnowledgeInstance.getTriangleScore() > 10 || nodeKnowledgeInstance.getTriangleScore() >= 0.5
-			|| nodeKnowledgeInstance.getBetweennessCentralityScore() >= 10 || nodeKnowledgeInstance.getClosenessCentralityScore() >= 0.38){
-				if(!nodeKnowledgeInstance.containsLabel("AbstractClass") && nodeKnowledgeInstance.containsLabel("Interface")){
-					nodeKnowledgeInstance.setReview("Abstract or Interface");
-				}
-				else if(nodeKnowledgeInstance.containsLabel("Entity")) {
-					nodeKnowledgeInstance.setReview("Entity");
-				}
-				else if(nodeKnowledgeInstance.containsLabel("Layer")){
-					nodeKnowledgeInstance.setReview("Layer");
-				}
-				else {
-					nodeKnowledgeInstance.setReviewNecessary(true);
-					nodeKnowledgeInstance.setReview("Review necessary");
-				}
-			}
-		}
-		return nodeKnowledge;
-	}
-
 	public HashMap<String, List<String>> getAllNodesWithLabels(){
 		try(Session session = driver.session()){
 			HashMap<String, List<String>> nodeNamesAndTypes = new HashMap<>();
@@ -266,23 +241,4 @@ public class GlobalAnalysis {
 			return results;
 		}
 	}
-
-	/*public HashMap<String, TriangleCountResult> executeTriangleCount() {
-		try (Session session = driver.session()) {
-			Result result = session.run("CALL algo.triangleCount.stream(null, null, {concurrency:8}) " +
-					"YIELD nodeId, triangles, coefficient " +
-					"return algo.getNodeById(nodeId).name as name, triangles, coefficient");
-
-			HashMap<String, TriangleCountResult> triangleResults = new HashMap<>();
-			for (Result it = result; it.hasNext(); ) {
-				Record record = it.next();
-				Map<String,Object> map = record.asMap();
-				triangleResults.put((String) map.get("name"), new TriangleCountResult(Double.valueOf(map.get("triangles").toString()).doubleValue(),
-						Double.valueOf(map.get("coefficient").toString()).doubleValue()));
-			}
-			return triangleResults;
-		}
-	}*/
-
-
 }

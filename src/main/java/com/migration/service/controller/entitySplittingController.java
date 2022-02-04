@@ -44,9 +44,16 @@ public class entitySplittingController {
 		return new ResponseEntity<>("Deleting all entity splitting profiles was successful", HttpStatus.OK);
 	}
 
-	//@CrossOrigin(origins = "http://localhost:4200")
+	@CrossOrigin(origins = "http://localhost:4200")
 	@GetMapping("/execute")
 	public ResponseEntity<List<ModuleKnowledge>> requestExecuteEntitySplitting(){
+		return new ResponseEntity<List<ModuleKnowledge>>(entitySplitting.executeEntitySplitting(), HttpStatus.OK);
+	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/execute/result/delete/component")
+	public ResponseEntity<List<ModuleKnowledge>> requestDeleteComponentInModule(@RequestParam String component, String base){
+
 		return new ResponseEntity<List<ModuleKnowledge>>(entitySplitting.executeEntitySplitting(), HttpStatus.OK);
 	}
 }

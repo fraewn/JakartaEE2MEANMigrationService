@@ -106,11 +106,14 @@ public class OntologyKnowledgeService {
 					"Encrypt data", "", "Backend", "Middleware", true, "bicrypt, npm"));
 			ontologyKnowledge.add(new OntologyKnowledge("Persistence Layer", "javax.transaction","Transaction Feature",
 					"Transactional data operations", "", "Backend", "Method in Controller", true, "mongoose transactions, npm"));
-			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.security","Authentication Management", "Authentication" +
+			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.security","Authentication Feature",
+					"Authentication" +
 					" mechanisms", "", "Backend", "Middleware", true, "jwt"));
-			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.management","Application Management", "Monitors and " +
+			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.management","Application Management Feature", "Monitors " +
+					"and " +
 					"manages the application", "", "External",	"External", true, "ELK Stack"));
-			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.ejb.Schedule","Scheduling", "Schedules processes", "",
+			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.ejb.Schedule","Scheduling Feature", "Schedules processes",
+					"",
 					"Backend",	"Own Class", true, "cron"));
 			this.insertAll(ontologyKnowledge);
 		}
