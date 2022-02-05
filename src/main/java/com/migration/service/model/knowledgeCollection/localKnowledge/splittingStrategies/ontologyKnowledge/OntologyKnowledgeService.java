@@ -35,6 +35,10 @@ public class OntologyKnowledgeService {
 		return ontologyKnowledgeRepository.findByJavaEEComponent(javaEEComponent);
 	}
 
+	public OntologyKnowledge findByKnowledgeSource(String knowledgeSource){
+		return ontologyKnowledgeRepository.findByKnowledgeSource(knowledgeSource);
+	}
+
 	public void associateKeyword(String keyword, String javaEEComponent){
 		OntologyKnowledge ontologyKnowledge = ontologyKnowledgeRepository.findByJavaEEComponent(javaEEComponent);
 		ontologyKnowledgeRepository.delete(ontologyKnowledge);
@@ -68,8 +72,8 @@ public class OntologyKnowledgeService {
 					"Used by the service", "DAO.java", "Backend", "Controller", true, "mongoose"));
 			ontologyKnowledge.add(new OntologyKnowledge("Web Layer", "javax.ws.rs", "REST Controller", "Enables external communication " +
 					"via network using the REST paradigm ", "REST", "Backend", "REST API", true, ""));
-			ontologyKnowledge.add(new OntologyKnowledge("Web Layer", "jws.soap","WSDL Endpoint ", "Describes the form of external communication via " +
-					"network using the SOAP protocol ", "SOAP", "Backend", "SOAP-API", true, ""));
+			ontologyKnowledge.add(new OntologyKnowledge("Web Layer", "jws.soap","SOAP API ", "Enables network communication via the SOAP " +
+					"protocol ", "SOAP", "Backend", "SOAP-API", true, ""));
 			ontologyKnowledge.add(new OntologyKnowledge("Web Layer", "jws.soap","WSDL Endpoint ", "Describes the form of external " +
 					"communication via network using the SOAP protocol ", "wsdl", "Backend", "SOAP-API", true, ""));
 			ontologyKnowledge.add(new OntologyKnowledge("Persistence Layer", "Default Component","Database Entity",

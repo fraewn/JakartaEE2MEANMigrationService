@@ -100,7 +100,6 @@ public class GlobalAnalysis {
 					}
 				}
 				if(calculatedInterpretations.size()==0 || calculatedInterpretations.size() > 2){
-					System.out.println(nodeKnowledgeInstance);
 					nodeKnowledgeInstance.setReviewNecessary(true);
 				}
 				else {

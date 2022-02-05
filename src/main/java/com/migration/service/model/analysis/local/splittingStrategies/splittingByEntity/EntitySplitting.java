@@ -40,7 +40,7 @@ public class EntitySplitting {
 			ModuleKnowledge moduleKnowledge = new ModuleKnowledge();
 			moduleKnowledge.setBase(entity);
 			moduleKnowledge.setModuleCluster(filteredModule);
-			moduleKnowledge.setSplittingStrategy("Entity Splitting Strategy");
+			moduleKnowledge.setSplittingStrategy("Entity Based Splitting Strategy");
 			moduleKnowledges.add(moduleKnowledge);
 		}
 		moduleKnowledgeService.insertAll(moduleKnowledges);

@@ -131,7 +131,7 @@ public class TaskController {
 		List<NodeKnowledge> nodeKnowledge = globalAnalysis.executeGlobalAnalyses();
 		nodeKnowledgeService.deleteAll();
 		nodeKnowledgeService.insertAll(nodeKnowledge);
-		return new ResponseEntity<>("Global Analyses were executed", HttpStatus.OK);
+		return new ResponseEntity<String>("Global Analyses were executed", HttpStatus.OK);
 	}
 
 	@CrossOrigin(origins = "http://localhost:4200")
