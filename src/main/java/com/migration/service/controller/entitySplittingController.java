@@ -1,6 +1,7 @@
 package com.migration.service.controller;
 import com.migration.service.model.analysis.local.splittingStrategies.splittingByEntity.EntitySplitting;
 import com.migration.service.model.knowledgeCollection.localKnowledge.modules.ModuleKnowledge;
+import com.migration.service.model.knowledgeCollection.localKnowledge.modules.ModuleKnowledgeService;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.entitySplitting.EntitySplittingProfile;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.entitySplitting.EntitySplittingProfileService;
 import lombok.AllArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.List;
 public class entitySplittingController {
 	private final EntitySplittingProfileService entitySplittingProfileService;
 	private final EntitySplitting entitySplitting;
+	private final ModuleKnowledgeService moduleKnowledgeService;
 
 	@CrossOrigin(origins = "http://localhost:4200")
 	@GetMapping("/profile/current")
@@ -47,13 +49,21 @@ public class entitySplittingController {
 	@CrossOrigin(origins = "http://localhost:4200")
 	@GetMapping("/execute")
 	public ResponseEntity<List<ModuleKnowledge>> requestExecuteEntitySplitting(){
-		return new ResponseEntity<List<ModuleKnowledge>>(entitySplitting.executeEntitySplitting(), HttpStatus.OK);
+		moduleKnowledgeService.deleteAll();
+		entitySplitting.executeEntitySplitting();
+		return new ResponseEntity<List<ModuleKnowledge>>(moduleKnowledgeService.findAll(), HttpStatus.OK);
+	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/execute/result")
+	public ResponseEntity<List<ModuleKnowledge>> requestEntitySplittingResults(){
+		return new ResponseEntity<List<ModuleKnowledge>>(moduleKnowledgeService.findAll(), HttpStatus.OK);
 	}
 
 	@CrossOrigin(origins = "http://localhost:4200")
 	@GetMapping("/execute/result/delete/component")
 	public ResponseEntity<List<ModuleKnowledge>> requestDeleteComponentInModule(@RequestParam String component, String base){
-
-		return new ResponseEntity<List<ModuleKnowledge>>(entitySplitting.executeEntitySplitting(), HttpStatus.OK);
+		moduleKnowledgeService.deleteComponentInModule(base, component);
+		return new ResponseEntity<List<ModuleKnowledge>>(moduleKnowledgeService.findAll(), HttpStatus.OK);
 	}
 }

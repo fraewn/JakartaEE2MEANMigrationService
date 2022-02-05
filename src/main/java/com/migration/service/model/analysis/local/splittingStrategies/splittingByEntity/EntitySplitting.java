@@ -2,6 +2,7 @@ package com.migration.service.model.analysis.local.splittingStrategies.splitting
 
 import com.migration.service.model.knowledgeCollection.globalKnowledge.NodeKnowledgeService;
 import com.migration.service.model.knowledgeCollection.localKnowledge.modules.ModuleKnowledge;
+import com.migration.service.model.knowledgeCollection.localKnowledge.modules.ModuleKnowledgeService;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.entitySplitting.EntitySplittingProfile;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.entitySplitting.EntitySplittingProfileService;
 import org.neo4j.driver.Driver;
@@ -15,18 +16,20 @@ import java.util.List;
 public class EntitySplitting {
 	private final NodeKnowledgeService nodeKnowledgeService;
 	private final EntitySplittingProfileService entitySplittingProfileService;
+	private final ModuleKnowledgeService moduleKnowledgeService;
 	private EntitySplittingProfile entitySplittingProfile;
 
 
 	private final Driver driver;
 	public EntitySplitting(Driver driver, NodeKnowledgeService nodeKnowledgeService,
-						   EntitySplittingProfileService entitySplittingProfileService) {
+						   EntitySplittingProfileService entitySplittingProfileService, ModuleKnowledgeService moduleKnowledgeService) {
 		this.driver = driver;
 		this.nodeKnowledgeService = nodeKnowledgeService;
 		this.entitySplittingProfileService = entitySplittingProfileService;
+		this.moduleKnowledgeService = moduleKnowledgeService;
 
 	}
-	public List<ModuleKnowledge> executeEntitySplitting(){
+	public void executeEntitySplitting(){
 		List<ModuleKnowledge> moduleKnowledges = new ArrayList<>();
 		this.entitySplittingProfile = entitySplittingProfileService.findAll().get(0);
 		for(String entity : this.getEntities()){
@@ -40,7 +43,7 @@ public class EntitySplitting {
 			moduleKnowledge.setSplittingStrategy("Entity Splitting Strategy");
 			moduleKnowledges.add(moduleKnowledge);
 		}
-		return moduleKnowledges;
+		moduleKnowledgeService.insertAll(moduleKnowledges);
 	}
 
 	public List<String> filter(List<String> module){
