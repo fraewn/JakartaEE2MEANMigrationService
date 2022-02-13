@@ -5,5 +5,5 @@ import org.springframework.stereotype.Repository;
 
 
 @Repository
-public interface FunctionalityKnowledgeRepository extends MongoRepository<FunctionalityKnowledge, String> {
+public interface FunctionalitySplittingProfileRepository extends MongoRepository<FunctionalitySplittingProfile, String> {
 }

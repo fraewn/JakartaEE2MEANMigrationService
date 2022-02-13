@@ -6,9 +6,7 @@ import com.migration.service.model.knowledgeCollection.localKnowledge.modules.Mo
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -22,6 +20,21 @@ public class FunctionalitySplittingController {
 	//@CrossOrigin(origins = "http://localhost:4200")
 	@GetMapping("/execute")
 	public ResponseEntity<List<ModuleKnowledge>> requestExecuteEntitySplitting(){
-		return new ResponseEntity<List<ModuleKnowledge>>(functionalitySplitting.executeFunctionalitySplittingStrategy(), HttpStatus.OK);
+		moduleKnowledgeService.deleteFunctionalityBasedModules();
+		functionalitySplitting.executeFunctionalitySplittingStrategy();
+		return new ResponseEntity<List<ModuleKnowledge>>(moduleKnowledgeService.findAllFunctionalityBasedModules(), HttpStatus.OK);
+	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/execute/result")
+	public ResponseEntity<List<ModuleKnowledge>> requestEntitySplittingResults(){
+		return new ResponseEntity<List<ModuleKnowledge>>(moduleKnowledgeService.findAllFunctionalityBasedModules(), HttpStatus.OK);
+	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/execute/result/delete/component")
+	public ResponseEntity<List<ModuleKnowledge>> requestDeleteComponentInModule(@RequestParam String component, String base){
+		moduleKnowledgeService.deleteComponentInModule(base, component);
+		return new ResponseEntity<List<ModuleKnowledge>>(moduleKnowledgeService.findAllFunctionalityBasedModules(), HttpStatus.OK);
 	}
 }
