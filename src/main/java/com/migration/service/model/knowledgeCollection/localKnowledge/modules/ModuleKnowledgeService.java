@@ -68,4 +68,14 @@ public class ModuleKnowledgeService {
 		moduleKnowledge.getModuleCluster().remove(component);
 		insertOne(moduleKnowledge);
 	}
+
+	public List<ModuleKnowledge> findAllFinalModules() {
+		return moduleKnowledgeRepository.findModuleKnowledgeBySplittingStrategy("Manual Assignment");
+	}
+
+	public void updateByBase(String base, ModuleKnowledge updatedModuleKnowledgeInstance){
+		ModuleKnowledge moduleKnowledge = this.findModuleKnowledgeByBase(base);
+		this.deleteOne(moduleKnowledge);
+		this.insertOne(updatedModuleKnowledgeInstance);
+	}
 }
