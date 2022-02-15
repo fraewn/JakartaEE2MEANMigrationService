@@ -78,4 +78,9 @@ public class ModuleKnowledgeService {
 		this.deleteOne(moduleKnowledge);
 		this.insertOne(updatedModuleKnowledgeInstance);
 	}
+
+	public void deleteModule(String base) {
+		ModuleKnowledge moduleKnowledge = this.findModuleKnowledgeByBase(base);
+		this.deleteOne(moduleKnowledge);
+	}
 }

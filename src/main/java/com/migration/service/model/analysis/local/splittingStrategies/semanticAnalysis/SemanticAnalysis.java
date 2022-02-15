@@ -1,8 +1,8 @@
 package com.migration.service.model.analysis.local.splittingStrategies.semanticAnalysis;
 
+import com.migration.service.model.analysis.local.splittingStrategies.splittingByEntity.EntitySplitting;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.ontologyKnowledge.OntologyKnowledgeService;
 import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
-import lombok.AllArgsConstructor;
 import org.neo4j.driver.*;
 import org.springframework.stereotype.Component;
 
@@ -14,10 +14,12 @@ import java.util.List;
 public class SemanticAnalysis {
 	private final Driver driver;
 	private OntologyKnowledgeService ontologyKnowledgeService;
-	public SemanticAnalysis(Driver driver, OntologyKnowledgeService ontologyKnowledgeService) {
+	private EntitySplitting entitySplitting;
+	public SemanticAnalysis(Driver driver, OntologyKnowledgeService ontologyKnowledgeService, EntitySplitting entitySplitting) {
 		this.driver = driver;
 		// if semantic analysis is used, set up ontology
 		this.ontologyKnowledgeService = ontologyKnowledgeService;
+		this.entitySplitting = entitySplitting;
 		ontologyKnowledgeService.setUp();
 	}
 
@@ -72,6 +74,10 @@ public class SemanticAnalysis {
 				semanticKnowledge.add(semanticKnowledgeInstance);
 		}
 		// persist in db
+		List<String> entities= entitySplitting.getEntities();
+		for(SemanticKnowledge semanticKnowledgeInstance : semanticKnowledge){
+			semanticKnowledgeInstance.getKeywords().removeAll(entities);
+		}
 		return semanticKnowledge;
 	}
 
@@ -122,6 +128,10 @@ public class SemanticAnalysis {
 			}
 			semanticKnowledge.add(semanticKnowledgeInstance);
 		}
+		List<String> entities= entitySplitting.getEntities();
+		for(SemanticKnowledge semanticKnowledgeInstance : semanticKnowledge){
+			semanticKnowledgeInstance.getKeywords().removeAll(entities);
+		}
 		return semanticKnowledge;
 	}
 
@@ -163,6 +173,10 @@ public class SemanticAnalysis {
 				}
 				semanticKnowledge.add(semanticKnowledgeInstance);
 			}
+		}
+		List<String> entities= entitySplitting.getEntities();
+		for(SemanticKnowledge semanticKnowledgeInstance : semanticKnowledge){
+			semanticKnowledgeInstance.getKeywords().removeAll(entities);
 		}
 		return semanticKnowledge;
 	}

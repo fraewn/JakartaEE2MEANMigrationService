@@ -13,6 +13,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.w3c.dom.Node;
+
 import java.util.List;
 
 @RestController
@@ -127,11 +129,11 @@ public class TaskController {
 
 	@CrossOrigin(origins = "http://localhost:4200")
 	@GetMapping("/globalAnalyses")
-	public ResponseEntity<String> callGlobalAnalyses(){
+	public ResponseEntity<List<NodeKnowledge>> callGlobalAnalyses(){
 		List<NodeKnowledge> nodeKnowledge = globalAnalysis.executeGlobalAnalyses();
 		nodeKnowledgeService.deleteAll();
 		nodeKnowledgeService.insertAll(nodeKnowledge);
-		return new ResponseEntity<String>("Global Analyses were executed", HttpStatus.OK);
+		return new ResponseEntity<List<NodeKnowledge>>(nodeKnowledgeService.findAll(), HttpStatus.OK);
 	}
 
 	@CrossOrigin(origins = "http://localhost:4200")

@@ -17,7 +17,7 @@ public class FunctionalitySplittingController {
 	private final FunctionalitySplitting functionalitySplitting;
 	private final ModuleKnowledgeService moduleKnowledgeService;
 
-	//@CrossOrigin(origins = "http://localhost:4200")
+	@CrossOrigin(origins = "http://localhost:4200")
 	@GetMapping("/execute")
 	public ResponseEntity<List<ModuleKnowledge>> requestExecuteEntitySplitting(){
 		moduleKnowledgeService.deleteFunctionalityBasedModules();
@@ -35,6 +35,13 @@ public class FunctionalitySplittingController {
 	@GetMapping("/execute/result/delete/component")
 	public ResponseEntity<List<ModuleKnowledge>> requestDeleteComponentInModule(@RequestParam String component, String base){
 		moduleKnowledgeService.deleteComponentInModule(base, component);
+		return new ResponseEntity<List<ModuleKnowledge>>(moduleKnowledgeService.findAllFunctionalityBasedModules(), HttpStatus.OK);
+	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/execute/result/delete/module")
+	public ResponseEntity<List<ModuleKnowledge>> requestDeleteModule(@RequestParam String base){
+		moduleKnowledgeService.deleteModule(base);
 		return new ResponseEntity<List<ModuleKnowledge>>(moduleKnowledgeService.findAllFunctionalityBasedModules(), HttpStatus.OK);
 	}
 }

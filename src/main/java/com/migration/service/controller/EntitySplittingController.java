@@ -66,4 +66,11 @@ public class EntitySplittingController {
 		moduleKnowledgeService.deleteComponentInModule(base, component);
 		return new ResponseEntity<List<ModuleKnowledge>>(moduleKnowledgeService.findAllEntityBasedModules(), HttpStatus.OK);
 	}
+
+	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/execute/result/delete/module")
+	public ResponseEntity<List<ModuleKnowledge>> requestDeleteModule(@RequestParam String base){
+		moduleKnowledgeService.deleteModule(base);
+		return new ResponseEntity<List<ModuleKnowledge>>(moduleKnowledgeService.findAllEntityBasedModules(), HttpStatus.OK);
+	}
 }
