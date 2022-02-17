@@ -1,19 +1,18 @@
 package com.migration.service.controller;
 
-import com.migration.service.model.analysis.global.GlobalAnalysis;
-import com.migration.service.model.analysis.local.splittingStrategies.semanticAnalysis.SemanticAnalysis;
-import com.migration.service.model.analysis.local.splittingStrategies.semanticAnalysis.SemanticAnalysisExtension;
-import com.migration.service.model.knowledgeCollection.globalKnowledge.NodeKnowledge;
-import com.migration.service.model.knowledgeCollection.globalKnowledge.NodeKnowledgeService;
-import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.ontologyKnowledge.OntologyKnowledge;
-import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.ontologyKnowledge.OntologyKnowledgeService;
-import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledge;
-import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.semanticKnowledge.SemanticKnowledgeService;
+import com.migration.service.service.analysis.global.GlobalAnalysis;
+import com.migration.service.service.analysis.semanticAnalysis.SemanticAnalysis;
+import com.migration.service.service.analysis.semanticAnalysis.SemanticAnalysisExtension;
+import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowledge;
+import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowledgeService;
+import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledge;
+import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledgeService;
+import com.migration.service.model.analysisKnowledge.semanticKnowledge.SemanticKnowledge;
+import com.migration.service.model.analysisKnowledge.semanticKnowledge.SemanticKnowledgeService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.w3c.dom.Node;
 
 import java.util.List;
 

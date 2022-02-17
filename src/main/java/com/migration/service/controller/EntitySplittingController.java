@@ -1,9 +1,9 @@
 package com.migration.service.controller;
-import com.migration.service.model.analysis.local.splittingStrategies.splittingByEntity.EntitySplitting;
-import com.migration.service.model.knowledgeCollection.localKnowledge.modules.ModuleKnowledge;
-import com.migration.service.model.knowledgeCollection.localKnowledge.modules.ModuleKnowledgeService;
-import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.entitySplitting.EntitySplittingProfile;
-import com.migration.service.model.knowledgeCollection.localKnowledge.splittingStrategies.entitySplitting.EntitySplittingProfileService;
+import com.migration.service.service.analysis.local.splittingStrategies.splittingByEntity.EntitySplitting;
+import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledge;
+import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledgeService;
+import com.migration.service.model.analysisKnowledge.localKnowledge.splittingStrategies.entitySplitting.EntitySplittingProfile;
+import com.migration.service.model.analysisKnowledge.localKnowledge.splittingStrategies.entitySplitting.EntitySplittingProfileService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
