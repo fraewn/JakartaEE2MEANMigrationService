@@ -148,76 +148,80 @@ public class CreateMEANArchitectureGraph {
 		int modelCount =0;
 		int routeCount=0;
 		int soapApiCount = 0;
+		String soapAPIJavaEEComponent="SOAP API";
+		String wsdlEndpointJavaEEComponent="WSDL Endpoint";
 		for(String component : moduleKnowledge.getModuleCluster()){
 			NodeKnowledge nodeKnowledge = this.findNodeKnowledgeByClassName(component);
-			for(String interpretation : nodeKnowledge.getCalculatedInterpretation()){
-				if(interpretation.equals("Entity Implementation")){
-					moduleName = getEntityProcessingModuleName(component);
-					System.out.println(moduleName);
-					String associatedMEANComponent =
-							ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent();
+			moduleName = getEntityProcessingModuleName(component);
+			// model
+			// (additional) soap route
+			if(nodeKnowledge.getCalculatedInterpretation().contains(soapAPIJavaEEComponent)){
+				String associatedMEANComponent =
+						ontologyKnowledgeService.findByJavaEEComponent(soapAPIJavaEEComponent).getMEANComponent();
+				query =
+						query + " MERGE (s" + soapApiCount + ":" + associatedMEANComponent + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() + "', location: '" + meanLocation + "', package: " +
+								"'soap/routes'})";
+				if(!(soapApiCount>0)) {
 					query =
-							query + " MERGE (n" + entityCount + ":" + associatedMEANComponent + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() + "', location: '" + meanLocation + "', package: " +
-							"'controller'})";
+							query + " MERGE (t:Functionality" + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() +
+									"', location: '" + meanLocation + "', package: 'soap/route', name: '" + ontologyKnowledgeService.findByJavaEEComponent(soapAPIJavaEEComponent).getDefaultLibrary() + "'})";
+				}
+				soapApiCount++;
+			}
+			// soap controller
+			else if(nodeKnowledge.getCalculatedInterpretation().contains(wsdlEndpointJavaEEComponent)){
+				String associatedMEANComponent =
+						ontologyKnowledgeService.findByJavaEEComponent(wsdlEndpointJavaEEComponent).getMEANComponent();
+				query =
+						query + " MERGE (w:" + associatedMEANComponent + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() + "', location: '" + meanLocation + "', package: " +
+								"'soap/controller'})";
+			}
+			else {
+				for (String interpretation : nodeKnowledge.getCalculatedInterpretation()) {
 
-					if(!(entityCount>0)) {
+					if (interpretation.equals("Entity Implementation")) {
+						String associatedMEANComponent =
+								ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent();
 						query =
-								query + " MERGE (f:Functionality {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() +
-								"', location: '" + meanLocation + "', package: 'routes', name: 'mongoose'})";
-					}
-					entityCount++;
-					// persist entity, attributes and relation to other entities
-					this.persistEntityModel(this.createBackendModel(component));
-				}
-				if(interpretation.equals("Data Access Object")){
-					String associatedMEANComponent =
-							ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent();
-					query =
-							query + " MERGE (m" + modelCount + ":" + associatedMEANComponent + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() + "', location: '" + meanLocation + "', package: " +
-							"'model'})";
-					modelCount++;
-				}
-				if(interpretation.equals("Service")){
-					String associatedMEANComponent =
-							ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent();
-					query =
-							query + " MERGE (k" + routeCount + ":" + associatedMEANComponent + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() + "', location: '" + meanLocation + "', package: " +
-							"'routes'})";
+								query + " MERGE (n" + entityCount + ":" + associatedMEANComponent + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() + "', location: '" + meanLocation + "', package: " +
+										"'model'})";
 
-					if(!(routeCount>0)) {
-						query =
-								query + " MERGE (g:Functionality" + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() +
-								"', location: '" + meanLocation + "', package: 'routes', name: '" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getDefaultLibrary() + "'})";
+						if (!(entityCount > 0)) {
+							query =
+									query + " MERGE (f:Functionality {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() +
+											"', location: '" + meanLocation + "', package: 'routes', name: 'mongoose'})";
+						}
+						entityCount++;
+						// persist entity, attributes and relation to other entities
+						this.persistEntityModel(this.createBackendModel(component));
 					}
-					routeCount++;
-				}
-				if(interpretation.equals("SOAP API")){
-					String associatedMEANComponent =
-							ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent();
-					query =
-							query + " MERGE (s" + soapApiCount + ":" + associatedMEANComponent + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() + "', location: '" + meanLocation + "', package: " +
-							"'soap'})";
-					if(!(soapApiCount>0)) {
+					// controller
+					else if (interpretation.equals("Data Access Object")) {
+						String associatedMEANComponent =
+								ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent();
 						query =
-								query + " MERGE (t:Functionality" + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() +
-										"', location: '" + meanLocation + "', package: 'routes', name: '" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getDefaultLibrary() + "'})";
+								query + " MERGE (m" + modelCount + ":" + associatedMEANComponent + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() + "', location: '" + meanLocation + "', package: " +
+										"'controller'})";
+						modelCount++;
 					}
-					soapApiCount++;
-				}
-				if(interpretation.equals("WSDL Endpoint")){
-					String associatedMEANComponent =
-							ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent();
-					query =
-							query + " MERGE (w:" + associatedMEANComponent + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() + "', location: '" + meanLocation + "', package: " +
-							"'soap'})";
-					query =
-							query + " MERGE (z:Functionality" + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() +
-									"', location: '" + meanLocation + "', package: 'routes', name: '" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getDefaultLibrary() + "'})";
+					// route
+					else if (interpretation.equals("Service")) {
+						String associatedMEANComponent =
+								ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent();
+						query =
+								query + " MERGE (k" + routeCount + ":" + associatedMEANComponent + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() + "', location: '" + meanLocation + "', package: " +
+										"'routes'})";
+
+						if (!(routeCount > 0)) {
+							query =
+									query + " MERGE (g:Functionality" + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() +
+											"', location: '" + meanLocation + "', package: 'routes', name: '" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getDefaultLibrary() + "'})";
+						}
+						routeCount++;
+					}
 				}
 			}
 		}
-
-
 		// persist raw architecture as graph
 		this.runQueryOnMEANGraph(query);
 		// connect nodes
@@ -334,39 +338,43 @@ public class CreateMEANArchitectureGraph {
 		return className;
 	}
 
-	public boolean checkIfComponentForModuleExists(String component, String moduleId){
+	public boolean checkIfComponentForModuleExists(String component, String moduleId) {
 		String query = "Match (n:" + component + ") where n.id='" + moduleId + "' return n";
 		Driver driver = setUpNeo4jDriver("MEAN");
-		try(Session session = setUpNeo4jSession(driver)) {
+		try (Session session = setUpNeo4jSession(driver)) {
 			return session.run(query).list(result -> result.get("n").asNode()).size() > 0;
 		}
 	}
 
-
-
 	public void connectNodesInBackend(String module){
 		List<String> queries = new ArrayList<>();
 		queries.add("MATCH (n:App) MATCH (m:Route) where m.module='" + module + "' MERGE (n)" +
-				"-[:DEFINES]->(m)");
-		queries.add("MATCH (n:App) MATCH (m:SoapApi) where m.module='" + module + "' MERGE (n)" +
-				"-[:DEFINES]->(m)");
-		//queries.add("MATCH (n:App) where n.id='" + id + "' MATCH (m:Functionality) where m.id='" + id  + "' " +
-		//"MERGE (n)-[:USES]->(m)");
-		queries.add("MATCH (n:Controller) where n.module='" + module + "' MATCH (m:Model) where m.module='" + module  + "' MERGE " +
+				"-[:INCLUDES]->(m)");
+		queries.add("MATCH (n:App) MATCH (m:SoapRoute) where m.module='" + module + "' MERGE (n)" +
+				"-[:INCLUDES]->(m)");
+		queries.add("MATCH (n:RestController) where n.module='" + module + "' MATCH (m:Model) where m.module='" + module  + "' MERGE " +
 				"(n)-[:USES]->(m)");
-		queries.add("MATCH (n:Route) where n.module='" + module + "' MATCH (m:Controller) where m.module='" + module  + "' MERGE " +
+		queries.add("MATCH (n:SoapController) where n.module='" + module + "' MATCH (m:Model) where m.module='" + module  + "' MERGE " +
+				"(n)-[:USES]->(m)");
+		queries.add("MATCH (n:Model) where n.module='" + module + "' MATCH (m:Functionality) where m.module='" + module  + "' AND m" +
+				".name='mongoose' MERGE(n)-[:IMPORTS]->(m)");
+		queries.add("MATCH (n:Route) where n.module='" + module + "' MATCH (m:RestController) where m.module='" + module  + "' MERGE " +
+				"(n)-[:FORWARDS_REQUEST]->(m)");
+		queries.add("MATCH (n:SoapRoute) where n.module='" + module + "' MATCH (m:SoapController) where m.module='" + module + "' MERGE " +
 				"(n)-[:FORWARDS_REQUEST]->(m)");
 		queries.add("MATCH (n:Route) where n.module='" + module + "' MATCH (m:Functionality) where m.module='" + module  + "' "
 				+ "AND m.name='express.js' MERGE(n)-[:IMPORTS]->(m)");
 		queries.add("MATCH (n:Route) where n.module='" + module + "' MATCH (m:Middleware) where m.module='" + module  + "' MERGE " +
 				"(n)-[:FORWARDS_REQUEST]->(m)");
-		queries.add("MATCH (n:Controller) where n.module='" + module + "' MATCH (m:Functionality) where m.module='" + module
-				+ "' AND m.name='mongoose' MERGE(n)-[:IMPORTS]->(m)");
-		queries.add("MATCH (n:Middleware) where n.module='" + module + "' MATCH (m:Controller) where m.module='" + module  +
+		queries.add("MATCH (n:SoapRoute) where n.module='" + module + "' MATCH (m:Functionality) where m.module='" + module
+				+ "' AND m.name='soap' MERGE(n)-[:IMPORTS]->(m)");
+		queries.add("MATCH (n:Middleware) where n.module='" + module + "' MATCH (m:RestController) where m.module='" + module  +
 				"' MERGE(n)-[:FORWARDS_REQUEST]->(m)");
-		queries.add("MATCH (n:Controller) where n.module='" + module + "' MATCH (m:Class) where m.module='" + module  +
+		queries.add("MATCH (n:Middleware) where n.module='" + module + "' MATCH (m:SoapController) where m.module='" + module  +
 				"' MERGE(n)-[:FORWARDS_REQUEST]->(m)");
-		queries.add("MATCH (n:SoapApi) where n.module='" + module + "' MATCH (m:Controller) where m.module='" + module  +
+		queries.add("MATCH (n:RestController) where n.module='" + module + "' MATCH (m:Class) where m.module='" + module  +
+				"' MERGE(n)-[:FORWARDS_REQUEST]->(m)");
+		queries.add("MATCH (n:SoapController) where n.module='" + module + "' MATCH (m:Class) where m.module='" + module  +
 				"' MERGE(n)-[:FORWARDS_REQUEST]->(m)");
 		//... execute
 		for(String query : queries) {

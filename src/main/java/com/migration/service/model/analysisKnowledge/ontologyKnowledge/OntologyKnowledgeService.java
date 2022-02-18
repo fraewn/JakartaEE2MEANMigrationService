@@ -57,7 +57,6 @@ public class OntologyKnowledgeService {
 
 	public void setUp(){
 			ontologyKnowledgeRepository.deleteAll();
-
 			// das hier nur machen, wenn die nicht bereits mit keywords gefüllt sind!
 			List<OntologyKnowledge> ontologyKnowledge = new ArrayList<>();
 			ontologyKnowledge.add(new OntologyKnowledge("Persistence Layer", "Default Component", "Database Entity", "Representation of the " +
@@ -70,13 +69,13 @@ public class OntologyKnowledgeService {
 			ontologyKnowledge.add(new OntologyKnowledge("Persistence Layer", "Default Component","Service Interface", "Encapsulates access to data processing " +
 					"for an entity", "Service.java", "", "none", false, ""));
 			ontologyKnowledge.add(new OntologyKnowledge("Persistence Layer", "Default Component","Data Access Object", "Offers CRUD-functionality to database. " +
-					"Used by the service", "DAO.java", "Backend", "Controller", true, "mongoose"));
+					"Used by the service", "DAO.java", "Backend", "RestController", true, "mongoose"));
 			ontologyKnowledge.add(new OntologyKnowledge("Web Layer", "javax.ws.rs", "REST Controller", "Enables external communication " +
 					"via network using the REST paradigm ", "REST", "Backend", "RestApi", true, ""));
 			ontologyKnowledge.add(new OntologyKnowledge("Web Layer", "jws.soap","SOAP API", "Enables network communication via the SOAP " +
-					"protocol ", "SOAP", "Backend", "SoapApi", true, "soap"));
+					"protocol ", "SOAP", "Backend", "SoapRoute", true, "soap"));
 			ontologyKnowledge.add(new OntologyKnowledge("Web Layer", "jws.soap","WSDL Endpoint", "Describes the form of external " +
-					"communication via network using the SOAP protocol ", "wsdl", "Backend", "SoapApi", true, "soap"));
+					"communication via network using the SOAP protocol ", "wsdl", "Backend", "SoapController", true, "soap"));
 			ontologyKnowledge.add(new OntologyKnowledge("Persistence Layer", "Default Component","Database Entity",
 					"Definition of roles in the application", "", "Backend", "UserEntityAttribute", false, ""));
 			ontologyKnowledge.add(new OntologyKnowledge("Persistence Layer", "Default Component","Database Entity", "Definition of " +
