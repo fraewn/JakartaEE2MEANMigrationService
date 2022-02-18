@@ -14,7 +14,11 @@ public class EntityModel {
 	private String name;
 	private List<String> attributes;
 	private String identifyingAttribute;
+
+	// you only need to know if yes because the attribute's name is the name of the related entity
 	private HashMap<String, Boolean> attributeIsRelatedOtherEntity;
+	private HashMap<String, String> relationTypes;
+	private HashMap<String, String> attributeTypes;
 	private boolean createOne;
 	private boolean createMany;
 	private boolean readOne;
@@ -118,5 +122,21 @@ public class EntityModel {
 
 	public void setDeleteMany(boolean deleteMany) {
 		this.deleteMany = deleteMany;
+	}
+
+	public HashMap<String, String> getAttributeTypes() {
+		return attributeTypes;
+	}
+
+	public void setAttributeTypes(HashMap<String, String> attributeTypes) {
+		this.attributeTypes = attributeTypes;
+	}
+
+	public HashMap<String, String> getRelationTypes() {
+		return relationTypes;
+	}
+
+	public void setRelationTypes(HashMap<String, String> relationTypes) {
+		this.relationTypes = relationTypes;
 	}
 }

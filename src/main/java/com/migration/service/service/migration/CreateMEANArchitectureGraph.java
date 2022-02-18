@@ -8,6 +8,7 @@ import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyK
 import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledgeService;
 
 import com.migration.service.model.migrationKnowledge.entityMigration.EntityModel;
+import com.migration.service.model.migrationKnowledge.entityMigration.EntityModelService;
 import com.migration.service.service.util.EnvironmentUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -30,16 +31,19 @@ public class CreateMEANArchitectureGraph {
 	private ModuleKnowledgeService moduleKnowledgeService;
 	private NodeKnowledgeService nodeKnowledgeService;
 	private OntologyKnowledgeService ontologyKnowledgeService;
+	private EntityModelService entityModelService;
 
 	private List<String> entities = new ArrayList<>();
 
 
 	public CreateMEANArchitectureGraph(ModuleKnowledgeService moduleKnowledgeService,
 									   NodeKnowledgeService nodeKnowledgeService,
-									   OntologyKnowledgeService ontologyKnowledgeService){
+									   OntologyKnowledgeService ontologyKnowledgeService,
+									   EntityModelService entityModelService){
 		this.moduleKnowledgeService = moduleKnowledgeService;
 		this.nodeKnowledgeService = nodeKnowledgeService;
 		this.ontologyKnowledgeService = ontologyKnowledgeService;
+		this.entityModelService = entityModelService;
 
 		this.entities = this.setUpEntities();
 		javaEEGraphDriver = this.setUpNeo4jDriver("JavaEE");
@@ -148,6 +152,8 @@ public class CreateMEANArchitectureGraph {
 		int modelCount =0;
 		int routeCount=0;
 		int soapApiCount = 0;
+
+		List<EntityModel> entityModels = new ArrayList<>();
 		String soapAPIJavaEEComponent="SOAP API";
 		String wsdlEndpointJavaEEComponent="WSDL Endpoint";
 		for(String component : moduleKnowledge.getModuleCluster()){
@@ -193,7 +199,9 @@ public class CreateMEANArchitectureGraph {
 						}
 						entityCount++;
 						// persist entity, attributes and relation to other entities
-						this.persistEntityModel(this.createBackendModel(component));
+						EntityModel entityModel = this.createBackendModel(component);
+						entityModels.add(entityModel);
+						this.persistEntityModel(entityModel);
 					}
 					// controller
 					else if (interpretation.equals("Data Access Object")) {
@@ -226,10 +234,35 @@ public class CreateMEANArchitectureGraph {
 		this.runQueryOnMEANGraph(query);
 		// connect nodes
 		connectNodesInBackend(moduleKnowledge.getBase());
+		this.persistCallsToOtherModules(entityModels);
+
 	}
 
-	public void persistCallsToOtherModules(){
+	public void persistCallsToOtherModules(List<EntityModel> entityModels){
+		for(EntityModel entityModel : entityModels) {
+			System.out.println(entityModel.getName());
+			for (String attribute : entityModel.getAttributes()) {
 
+				if(entityModel.getAttributeIsRelatedOtherEntity().get(attribute)==true){
+					// does not work with User in reports (attribute like) because type is Set<User>  Match(n:Model {id:'Report.js'}) Match
+					// (m:Model {id:'Set<User>.js'}) MERGE (n)-[r:ManyToMany]-(m) SET r.name='liker'
+					this.runQueryOnMEANGraph("Match(n:Model {id:'" + this.getEntityProcessingModuleName(entityModel.getName()) + "'}) Match(m:Model {id:'" + entityModel.getAttributeTypes().get(attribute) +
+							".js'}) MERGE (n)-[r:" + entityModel.getRelationTypes().get(attribute) + "]-(m) SET r.name='" + attribute +
+							"'");
+				}
+			}
+		}
+	}
+
+
+	// probably not used since attributes are persisted in mongo
+	public void addAttributesToModels(EntityModel entityModel){
+		String attributeList = "";
+		for(String attribute : entityModel.getAttributes()){
+			String type = entityModel.getAttributeTypes().get(attribute);
+			attributeList = attributeList + attribute + ":" + type + ", ";
+		}
+		String query = "Match(n: {name: '" + entityModel.getName() + "'}) SET n.attributes = " + attributeList;
 	}
 
 	public String getEntityProcessingModuleName(String className){
@@ -259,7 +292,7 @@ public class CreateMEANArchitectureGraph {
 	}
 
 	public void persistEntityModel(EntityModel entityModel){
-		// write to mongo
+		this.entityModelService.insertOne(entityModel);
 	}
 
 	public NodeKnowledge findNodeKnowledgeByClassName(String component){
@@ -277,27 +310,37 @@ public class CreateMEANArchitectureGraph {
 		String query = "Match(n {name:'" + name + "'}) unwind n.fields as fields return fields";
 		List<String> attributes = new ArrayList<>();
 		HashMap<String, Boolean> entityAssociation = new HashMap<>();
+		HashMap<String, String> attributeTypes = new HashMap<>();
+		HashMap<String, String> relationTypes = new HashMap<>();
 		EntityModel entityModel = new EntityModel();
-		System.out.println(query);
 		try {
 			System.out.println(this.javaEEGraphSession.run(query).next());
 			for(Record r : this.javaEEGraphSession.run(query).list()){
 				//System.out.println(r.asMap());
 				JSONParser parser = new JSONParser();
 				JSONObject json = (JSONObject) parser.parse(r.asMap().get("fields").toString());
-				//System.out.println(json);
 				//System.out.println(json.get("names").toString());
-				attributes.add(json.get("names").toString().replace("[", "").replace("]", "").replaceAll("\"", ""));
-				if(json.get("annotations").toString().contains("Many")){
-					entityAssociation.put(json.get("names").toString().replace("[", "").replace("]", "").replaceAll("\"", ""), true);
+				String attribute = json.get("names").toString().replace("[", "").replace("]", "").replaceAll("\"", "");
+				attributes.add(attribute);
+				attributeTypes.put(attribute, json.get("type").toString());
+				if(json.get("annotations").toString().contains("ManyToOne")){
+					entityAssociation.put(attribute, true);
+					relationTypes.put(attribute, "ManyToOne");
+				}
+				else if(json.get("annotations").toString().contains("ManyToMany")){
+					entityAssociation.put(attribute, true);
+					relationTypes.put(attribute, "ManyToMany");
 				}
 				else {
-					entityAssociation.put(json.get("names").toString().replace("[", "").replace("]", "").replaceAll("\"", ""), false);
+					entityAssociation.put(attribute, false);
 				}
 			}
 			entityModel.setName(name);
 			entityModel.setAttributes(attributes);
+			entityModel.setAttributeTypes(attributeTypes);
 			entityModel.setAttributeIsRelatedOtherEntity(entityAssociation);
+			entityModel.setRelationTypes(relationTypes);
+
 			//System.out.println(entityAssociation);
 
 			//List<Node> nodeList = this.javaEEGraphSession.run(query).list(result -> result.get("output").asNode());
@@ -317,14 +360,6 @@ public class CreateMEANArchitectureGraph {
 	public void addMissingComponentToModule(String component, String moduleId){
 		String query = "MERGE (n:" + component + " {id:'" + moduleId + "'})";
 		this.runQueryOnMEANGraph(query);
-		/*try(Session session = javaEEGraphDriver.session()) {
-			session.run(query);
-		}
-		catch(Exception e){
-			System.out.println("Exception during adding an additional component node " + component);
-			e.printStackTrace();
-			System.out.println(e.getMessage());
-		}*/
 	}
 
 	// Route, Modell and Controller naming conventions represent the entity that is processed by them
@@ -380,6 +415,10 @@ public class CreateMEANArchitectureGraph {
 		for(String query : queries) {
 			this.runQueryOnMEANGraph(query);
 		}
+	}
+
+	public void connectControllerCallsToOtherEntities(){
+
 	}
 
 
