@@ -27,6 +27,7 @@ public class EntityModel {
 	private boolean writeMany;
 	private boolean deleteOne;
 	private boolean deleteMany;
+	private HashMap<String, String> batchMethods;
 
 	public String getName() {
 		return name;

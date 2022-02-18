@@ -97,7 +97,7 @@ public class OntologyKnowledgeService {
 			ontologyKnowledge.add(new OntologyKnowledge("Presentation Layer", "","View Data Service", "Processes data coming from/needed " +
 					"by the view classes","DataService.java", "Frontend","service_ts", true,"HTTP Client, Router, Subject"));
 			ontologyKnowledge.add(new OntologyKnowledge("", "Default Component","Cross Section", "functionality used by all layers, e.g. logging",
-					"", "Frontend/Backend", "class", true, "" ));
+					"", "Frontend/Backend", "Class", true, "" ));
 			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.enterprise.event","Event Management",
 					"Handling incoming events and execute tasks scheduled for them", "", "Frontend", "subject", true, "rsjx"));
 			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.batch","Batch Feature",
@@ -105,7 +105,7 @@ public class OntologyKnowledgeService {
 			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.mail","Mail Feature",
 					"Sending emails", "", "Backend", "_js", true, ""));
 			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "jms","Messaging Feature",
-					"Communication per messages and queues via network", "", "Backend", ".js", true, "kafka"));
+					"Communication per messages and queues via network", "", "Backend", "Class", true, "kafka"));
 			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.crypto","Encryption",
 					"Encrypt data", "", "Backend", "middleware", true, "bicrypt"));
 			ontologyKnowledge.add(new OntologyKnowledge("Persistence Layer", "javax.transaction","Transaction Feature",
@@ -118,7 +118,7 @@ public class OntologyKnowledgeService {
 					"manages the application", "", "External",	"External", true, "ELK-Stack"));
 			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.ejb.Schedule","Scheduling Feature", "Schedules processes",
 					"",
-					"Backend",	"Own Class", true, "cron"));
+					"Backend",	"Class", true, "cron"));
 			this.insertAll(ontologyKnowledge);
 		System.out.println("executed");
 	}

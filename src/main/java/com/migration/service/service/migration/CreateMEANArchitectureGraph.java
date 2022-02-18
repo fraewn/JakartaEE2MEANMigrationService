@@ -4,7 +4,6 @@ import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowled
 import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowledgeService;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledge;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledgeService;
-import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledge;
 import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledgeService;
 
 import com.migration.service.model.migrationKnowledge.entityMigration.EntityModel;
@@ -32,6 +31,8 @@ public class CreateMEANArchitectureGraph {
 	private NodeKnowledgeService nodeKnowledgeService;
 	private OntologyKnowledgeService ontologyKnowledgeService;
 	private EntityModelService entityModelService;
+
+	List<EntityModel> entityModels = new ArrayList<>();
 
 	private List<String> entities = new ArrayList<>();
 
@@ -93,7 +94,7 @@ public class CreateMEANArchitectureGraph {
 					this.createEntityProcessingMEANModule(moduleKnowledgeInstance);
 				}
 				if(moduleKnowledgeInstance.getUsage().equals(("Backend Feature"))){
-
+					this.processBackendFeature(moduleKnowledgeInstance);
 				}
 			}
 
@@ -132,15 +133,96 @@ public class CreateMEANArchitectureGraph {
 			}*/
 
 		}
+		this.persistCallsToOtherModules(entityModels);
 	}
 
-	public void processBackendFeature(ModuleKnowledge moduleKnowledge){
-		for(String component : moduleKnowledge.getModuleCluster()) {
-			NodeKnowledge nodeKnowledge = this.findNodeKnowledgeByClassName(component);
-			for(String interpretation : nodeKnowledge.getCalculatedInterpretation()){
+	public void processBackendFeature(ModuleKnowledge backendFeatureKnowledge){
+		String schedulingFeatureJavaEEComponent = "Scheduling Feature";
+		String messagingFeatureJavaEEComponent="Messaging Feature";
+		for(String backendFeatureComponent : backendFeatureKnowledge.getModuleCluster()) {
+			NodeKnowledge featureComponentKnowledge = this.findNodeKnowledgeByClassName(backendFeatureComponent);
+			// module represents a scheduling feature
+			if(featureComponentKnowledge.getCalculatedInterpretation().contains(schedulingFeatureJavaEEComponent)){
+				this.addSchedulingFeatureToBackendModel(backendFeatureKnowledge);
+			}
 
+		}
+	}
+
+	public void addSchedulingFeatureToBackendModel(ModuleKnowledge moduleKnowledge){
+		String schedulingFeatureJavaEEComponent = "Scheduling Feature";
+
+		String createSchedulingFeatureQuery = "";
+		String createSchedulerToControllerRelationQuery = " ";
+		String createSchedulingFunctionalityQuery = "";
+		// for each component in the module
+		for(String component : moduleKnowledge.getModuleCluster()) {
+			// get further knowledge
+			NodeKnowledge componentKnowledge = this.findNodeKnowledgeByClassName(component);
+
+			// query to add the scheduling feature to the mean stack architecture model
+			createSchedulingFeatureQuery = "MERGE(schedulingFeature:" + ontologyKnowledgeService.findByJavaEEComponent(schedulingFeatureJavaEEComponent).getMEANComponent()
+					+ " {id: '" + this.renameToJsComponent(componentKnowledge.getName()) + "', module:'" + moduleKnowledge.getBase() +
+					"', location: 'Backend', package: 'scheduling'})";
+			createSchedulingFunctionalityQuery =
+					"MATCH(n:" + ontologyKnowledgeService.findByJavaEEComponent(schedulingFeatureJavaEEComponent).getMEANComponent() +
+							") MERGE(f:Functionality {name: '" + ontologyKnowledgeService.findByJavaEEComponent(schedulingFeatureJavaEEComponent).getDefaultLibrary() + "', module" +
+							":'" + moduleKnowledge.getBase() + "', location: 'Backend', package: 'scheduling'}) MERGE (n)-[:IMPORTS]-(f)";
+			this.runQueryOnMEANGraph(createSchedulingFeatureQuery);
+			this.runQueryOnMEANGraph(createSchedulingFunctionalityQuery);
+			// now find out which features are scheduled
+			for (String usedModule : moduleKnowledge.getUsedModules()) {
+				// find the module of the scheduled feature
+				ModuleKnowledge scheduledFeatureModuleKnowledge = moduleKnowledgeService.findModuleKnowledgeByBase(usedModule);
+				// for each component in the scheduled feature
+				for (String moduleComponent : moduleKnowledge.getModuleCluster()) {
+					NodeKnowledge scheduledFeatureComponentKnowledge = this.findNodeKnowledgeByClassName(moduleComponent);
+					// find all modules that are used by a scheduled module
+					// e.g. a scheduled batch feature:
+					if (scheduledFeatureComponentKnowledge.getCalculatedInterpretation().contains("Batch Feature")) {
+						// a batch feature is not visible as its own class in the mean stack architecture model
+						// instead it gets translated as a controller method (e.g. batch write xy)
+						// therefore, find all entity processing modules that the batch feature module uses
+						List<String> usedModules = scheduledFeatureModuleKnowledge.getUsedModules();
+						for (String moduleCalledByBatchFeature : usedModules) {
+							// add connection from the scheduler to the controller class, so it's visible in the modell
+							// that there are scheduled controller operations
+							createSchedulerToControllerRelationQuery =
+									"Match(n:" + ontologyKnowledgeService.findByJavaEEComponent(schedulingFeatureJavaEEComponent).getMEANComponent()
+											+ " {id:'" + this.renameToJsComponent(componentKnowledge.getName()) + "'}) Match(m:RestController {module:'" + moduleCalledByBatchFeature + "'}) MERGE (n)" +
+											"-[:CALLS]-(m)";
+							System.out.println(createSchedulerToControllerRelationQuery);
+							this.runQueryOnMEANGraph(createSchedulerToControllerRelationQuery);
+						}
+					}
+				}
 			}
 		}
+
+
+	}
+
+	public void setBatchAttributeInController(){
+		// write to mongo
+	}
+
+	public void connectFeatureToEntityProcessingModule(String featureId, String entityProcessingModuleId){
+
+	}
+
+	public String getControllerClassForBackendEntityProcessingModule(String usedModule){
+		String query = "Match(n:RestController {module:'" + usedModule + "'}) return n";
+		List<String> results = new ArrayList<>();
+		Driver driver = setUpNeo4jDriver("MEAN");
+		try(Session session = setUpNeo4jSession(driver)) {
+			session.run(query).list(result -> results.add(result.get("n").asNode().get("id").asString()));
+		}
+		catch(Exception e){
+			System.out.println("did not work");
+			e.printStackTrace();
+			System.out.println(e.getMessage());
+		}
+		return results.get(0);
 	}
 
 	public void createEntityProcessingMEANModule(ModuleKnowledge moduleKnowledge){
@@ -153,12 +235,12 @@ public class CreateMEANArchitectureGraph {
 		int routeCount=0;
 		int soapApiCount = 0;
 
-		List<EntityModel> entityModels = new ArrayList<>();
+
 		String soapAPIJavaEEComponent="SOAP API";
 		String wsdlEndpointJavaEEComponent="WSDL Endpoint";
 		for(String component : moduleKnowledge.getModuleCluster()){
 			NodeKnowledge nodeKnowledge = this.findNodeKnowledgeByClassName(component);
-			moduleName = getEntityProcessingModuleName(component);
+			moduleName = renameToJsComponent(component);
 			// model
 			// (additional) soap route
 			if(nodeKnowledge.getCalculatedInterpretation().contains(soapAPIJavaEEComponent)){
@@ -234,7 +316,6 @@ public class CreateMEANArchitectureGraph {
 		this.runQueryOnMEANGraph(query);
 		// connect nodes
 		connectNodesInBackend(moduleKnowledge.getBase());
-		this.persistCallsToOtherModules(entityModels);
 
 	}
 
@@ -246,7 +327,10 @@ public class CreateMEANArchitectureGraph {
 				if(entityModel.getAttributeIsRelatedOtherEntity().get(attribute)==true){
 					// does not work with User in reports (attribute like) because type is Set<User>  Match(n:Model {id:'Report.js'}) Match
 					// (m:Model {id:'Set<User>.js'}) MERGE (n)-[r:ManyToMany]-(m) SET r.name='liker'
-					this.runQueryOnMEANGraph("Match(n:Model {id:'" + this.getEntityProcessingModuleName(entityModel.getName()) + "'}) Match(m:Model {id:'" + entityModel.getAttributeTypes().get(attribute) +
+					System.out.println("Match(n:Model {id:'" + this.renameToJsComponent(entityModel.getName()) + "'}) Match(m:Model {id:'" + entityModel.getAttributeTypes().get(attribute) +
+							".js'}) MERGE (n)-[r:" + entityModel.getRelationTypes().get(attribute) + "]-(m) SET r.name='" + attribute +
+							"'");
+					this.runQueryOnMEANGraph("Match(n:Model {id:'" + this.renameToJsComponent(entityModel.getName()) + "'}) Match(m:Model {id:'" + entityModel.getAttributeTypes().get(attribute) +
 							".js'}) MERGE (n)-[r:" + entityModel.getRelationTypes().get(attribute) + "]-(m) SET r.name='" + attribute +
 							"'");
 				}
@@ -265,7 +349,7 @@ public class CreateMEANArchitectureGraph {
 		String query = "Match(n: {name: '" + entityModel.getName() + "'}) SET n.attributes = " + attributeList;
 	}
 
-	public String getEntityProcessingModuleName(String className){
+	public String renameToJsComponent(String className){
 		return className.replace(".java", "") + ".js";
 	}
 
