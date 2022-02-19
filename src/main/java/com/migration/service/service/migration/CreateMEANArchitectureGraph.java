@@ -106,6 +106,10 @@ public class CreateMEANArchitectureGraph {
 											this.addEmailFeatureUsage(moduleKnowledgeInstance, checkedModuleKnowledgeInstance);
 											break;
 										}
+										else if(nodeKnowledge.getCalculatedInterpretation().contains("Authentication Feature")){
+											this.addAuthFeatureUsage(moduleKnowledgeInstance, checkedModuleKnowledgeInstance);
+											break;
+										}
 									}
 									break;
 								}
@@ -126,6 +130,7 @@ public class CreateMEANArchitectureGraph {
 		String messagingFeatureJavaEEComponent="Messaging Feature";
 		String applicationManagementJavaEEComponent="Application Management Feature";
 		String emailJavaEEComponent="Mail Feature";
+		String authComponent="Authentication Feature";
 		for(String backendFeatureComponent : backendFeatureKnowledge.getModuleCluster()) {
 			NodeKnowledge featureComponentKnowledge = this.findNodeKnowledgeByClassName(backendFeatureComponent);
 			// module represents a scheduling feature
@@ -141,7 +146,35 @@ public class CreateMEANArchitectureGraph {
 			else if(featureComponentKnowledge.getCalculatedInterpretation().contains(emailJavaEEComponent)){
 				this.addEmailFeatureToBackendModel(backendFeatureKnowledge);
 			}
+			else if(featureComponentKnowledge.getCalculatedInterpretation().contains(authComponent)){
+				this.addAuthFeatureToBackendModel(backendFeatureKnowledge);
+			}
 		}
+	}
+
+	public void addAuthFeatureToBackendModel(ModuleKnowledge moduleKnowledge){
+		String query = "MERGE(n:Middleware {id:'Auth.js', module:'" + moduleKnowledge.getBase() + "', location: 'Backend', package: " +
+				"'middleware'})";
+		this.runQueryOnMEANGraph(query);
+	}
+
+	public void addAuthFeatureUsage(ModuleKnowledge usingModuleKnowledge, ModuleKnowledge authFeatureModuleKnowledge){
+		String authComponent="Authentication Feature";
+		String mergeQuery = "Match(n:Route) where n.module='" + usingModuleKnowledge.getBase() + "' MATCH(m:"
+				+ ontologyKnowledgeService.findByJavaEEComponent(authComponent).getMEANComponent() + ") where m.module='" + authFeatureModuleKnowledge.getBase() +
+				"' MERGE " +
+				"(n)" +
+				"-[:FORWARDS_REQUEST]-(m)";
+		String deleteQuery = "Match(n:Route) where n.module='" + usingModuleKnowledge.getBase() + "' MATCH(m:RestController) where m" +
+				".module='" + usingModuleKnowledge.getBase() + "' MATCH(n)-[r]-(m) delete r";
+		String reMergeQuery =
+				"Match(n:Middleware) where n.module='" + authFeatureModuleKnowledge.getBase() + "' MATCH(m:RestController) where m" +
+						".module='" + usingModuleKnowledge.getBase() +
+				"' MERGE (n)-[:FORWARDS_REQUEST]-(m)";
+		System.out.println(mergeQuery);
+		this.runQueryOnMEANGraph(mergeQuery);
+		this.runQueryOnMEANGraph(deleteQuery);
+		this.runQueryOnMEANGraph(reMergeQuery);
 	}
 
 	public void addEmailFeatureToBackendModel(ModuleKnowledge mailFeatureModuleKnowledge){

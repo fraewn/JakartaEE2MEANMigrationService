@@ -58,7 +58,13 @@ public class FinalModuleController {
 	public ResponseEntity<List<ModuleKnowledge>> updateUsedModules(@RequestParam String usedModule, String base){
 		ModuleKnowledge moduleKnowledge = moduleKnowledgeService.findModuleKnowledgeByBase(base);
 		moduleKnowledgeService.deleteOne(moduleKnowledge);
-		List<String> usages = new ArrayList<>();
+		List<String> usages;
+		if(moduleKnowledge.getUsedModules()!=null) {
+			 usages = moduleKnowledge.getUsedModules();
+		}
+		else{
+			usages = new ArrayList<>();
+		}
 		usages.add(usedModule);
 		moduleKnowledge.setUsedModules(usages);
 		moduleKnowledgeService.insertOne(moduleKnowledge);
