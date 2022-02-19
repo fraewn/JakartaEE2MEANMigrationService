@@ -103,7 +103,7 @@ public class OntologyKnowledgeService {
 			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.batch","Batch Feature",
 					"CRUD huge loads of data in batches", "javax.batch", "Backend", "ControllerMethod", true, ""));
 			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.mail","Mail Feature",
-					"Sending emails", "", "Backend", "_js", true, ""));
+					"Sending emails", "", "Backend", "Class", true, ""));
 			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "jms","Messaging Feature",
 					"Communication per messages and queues via network", "", "Backend", "Class", true, "kafka"));
 			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.crypto","Encryption",

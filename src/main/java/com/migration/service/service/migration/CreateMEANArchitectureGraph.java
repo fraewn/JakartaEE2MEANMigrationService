@@ -4,6 +4,7 @@ import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowled
 import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowledgeService;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledge;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledgeService;
+import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledge;
 import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledgeService;
 
 import com.migration.service.model.migrationKnowledge.entityMigration.EntityModel;
@@ -91,47 +92,31 @@ public class CreateMEANArchitectureGraph {
 			// for each component in a moduleCluster
 			if(moduleKnowledgeInstance.getUsage()!=null){
 				if(moduleKnowledgeInstance.getUsage().equals("Backend Entity Processing")){
+					// create backend entity processing module
 					this.createEntityProcessingMEANModule(moduleKnowledgeInstance);
+					// connect to modules used by it
+					if(moduleKnowledgeInstance.getUsedModules()!=null) {
+						for (String usedModule : moduleKnowledgeInstance.getUsedModules()) {
+							for (ModuleKnowledge checkedModuleKnowledgeInstance : moduleKnowledgeList) {
+								// find intelligence by module name
+								if (usedModule.equals(checkedModuleKnowledgeInstance.getBase())) {
+									for(String component : checkedModuleKnowledgeInstance.getModuleCluster()){
+										NodeKnowledge nodeKnowledge = nodeKnowledgeService.findByName(component);
+										if(nodeKnowledge.getCalculatedInterpretation().contains("Mail Feature")){
+											this.addEmailFeatureUsage(moduleKnowledgeInstance, checkedModuleKnowledgeInstance);
+											break;
+										}
+									}
+									break;
+								}
+							}
+						}
+					}
 				}
 				if(moduleKnowledgeInstance.getUsage().equals(("Backend Feature"))){
 					this.processBackendFeature(moduleKnowledgeInstance);
 				}
 			}
-
-			/*for (String component : moduleKnowledgeInstance.getModuleCluster()) {
-				// find the node knowledge that corresponds to it
-				for (NodeKnowledge nodeKnowledge : nodeKnowledgeService.findAll()) {
-					if(componentFound==true){
-						componentFound = false;
-						break;
-					}
-					if (component.equals(nodeKnowledge.getName())) {
-						componentFound = true;
-						// find the interpretation/javaEEcomponent that this node is associated with
-						for (String interpretation : nodeKnowledge.getCalculatedInterpretation()) {
-							try {
-								// look up what mean architecture component is associated with that javaEE component
-								OntologyKnowledge ontologyKnowledge = ontologyKnowledgeService.findByJavaEEComponent(interpretation);
-								String associatedMEANComponent = ontologyKnowledge.getMEANComponent();
-								if (ontologyKnowledge.getMEANLocation().equals("Backend")) {
-									createMEANComponentNode(associatedMEANComponent, moduleKnowledgeInstance.getBase(), component,
-											ontologyKnowledge.getMEANLocation());
-								}
-								// create graph node for that
-							}
-							catch(NullPointerException nullpointer){
-								System.out.println(nullpointer.getMessage());
-							}
-						}
-
-					}
-				}
-			}*/
-			/*String base = moduleKnowledgeInstance.getBase();
-			if(checkIfComponentForModuleExists("Controller", base)){
-				if(!checkIfComponentForModuleExists("Route", base)) this.addMissingComponentToModule("Route", base);
-			}*/
-
 		}
 		this.persistCallsToOtherModules(entityModels);
 	}
@@ -139,13 +124,75 @@ public class CreateMEANArchitectureGraph {
 	public void processBackendFeature(ModuleKnowledge backendFeatureKnowledge){
 		String schedulingFeatureJavaEEComponent = "Scheduling Feature";
 		String messagingFeatureJavaEEComponent="Messaging Feature";
+		String applicationManagementJavaEEComponent="Application Management Feature";
+		String emailJavaEEComponent="Mail Feature";
 		for(String backendFeatureComponent : backendFeatureKnowledge.getModuleCluster()) {
 			NodeKnowledge featureComponentKnowledge = this.findNodeKnowledgeByClassName(backendFeatureComponent);
 			// module represents a scheduling feature
 			if(featureComponentKnowledge.getCalculatedInterpretation().contains(schedulingFeatureJavaEEComponent)){
 				this.addSchedulingFeatureToBackendModel(backendFeatureKnowledge);
 			}
+			else if(featureComponentKnowledge.getCalculatedInterpretation().contains(applicationManagementJavaEEComponent)){
+				addApplicationManagementFeatureToBackendModel(backendFeatureKnowledge);
+			}
+			else if(featureComponentKnowledge.getCalculatedInterpretation().contains(messagingFeatureJavaEEComponent)){
+				addMessagingFeatureToBackendModel(backendFeatureKnowledge);
+			}
+			else if(featureComponentKnowledge.getCalculatedInterpretation().contains(emailJavaEEComponent)){
+				this.addEmailFeatureToBackendModel(backendFeatureKnowledge);
+			}
+		}
+	}
 
+	public void addEmailFeatureToBackendModel(ModuleKnowledge mailFeatureModuleKnowledge){
+		String emailJavaEEComponent="Mail Feature";
+			String query = "MERGE(n:" + ontologyKnowledgeService.findByJavaEEComponent(emailJavaEEComponent).getMEANComponent() + " {id: " +
+					"'Mail.js', module:'" + mailFeatureModuleKnowledge.getBase() + "', location: 'Backend', package: 'mail'})";
+			this.runQueryOnMEANGraph(query);
+	}
+
+	public void addEmailFeatureUsage(ModuleKnowledge usingModuleKnowledge, ModuleKnowledge emailFeatureModuleKnowledge){
+		String emailJavaEEComponent="Mail Feature";
+		String mergeQuery = "Match(n:RestController) where n.module='" + usingModuleKnowledge.getBase() + "' MATCH(m:"
+				+ ontologyKnowledgeService.findByJavaEEComponent(emailJavaEEComponent).getMEANComponent() + ") where m.module='" + emailFeatureModuleKnowledge.getBase() +
+				"' MERGE " +
+				"(n)" +
+				"-[:USES]-(m)";
+		System.out.println(mergeQuery);
+		this.runQueryOnMEANGraph(mergeQuery);
+	}
+
+	public void addApplicationManagementFeatureToBackendModel(ModuleKnowledge moduleKnowledge){
+		// external module, so no connections to other modules given
+		String applicationManagementJavaEEComponent="Application Management Feature";
+		runQueryOnMEANGraph("MERGE(n:" + ontologyKnowledgeService.findByJavaEEComponent(applicationManagementJavaEEComponent).getMEANComponent() + " {id: '" +
+				ontologyKnowledgeService.findByJavaEEComponent(applicationManagementJavaEEComponent).getDefaultLibrary() + "', module:'"
+				+ moduleKnowledge.getBase() + "', location: 'Backend', package: ''})");
+		connectNodesInBackend(moduleKnowledge.getBase());
+	}
+
+	public void addMessagingFeatureToBackendModel(ModuleKnowledge moduleKnowledge){
+		// kafka
+		String messagingFeatureJavaEEComponent="Messaging Feature";
+		String query = "MERGE(n:" + ontologyKnowledgeService.findByJavaEEComponent(messagingFeatureJavaEEComponent).getMEANComponent() + " {id: " +
+				"'Messenger.js', module: '" + moduleKnowledge.getBase() + "', location: 'Backend', package: 'messaging'})";
+		String functionalityQuery = "MERGE(n:Functionality {name: '" +
+				ontologyKnowledgeService.findByJavaEEComponent(messagingFeatureJavaEEComponent).getDefaultLibrary() + "', module: '"
+				+ moduleKnowledge.getBase() + "', location: 'Backend', package: 'messaging'})";
+		runQueryOnMEANGraph(query);
+		runQueryOnMEANGraph(functionalityQuery);
+		for(String component : moduleKnowledge.getModuleCluster()){
+			NodeKnowledge nodeKnowledge = nodeKnowledgeService.findByName(component);
+			if(nodeKnowledge.getCalculatedInterpretation().contains("Service")){
+				String messagingEndpointQuery =
+						"MERGE(n:" + ontologyKnowledgeService.findByJavaEEComponent("Service").getMEANComponent() + " {id: '" +
+						 renameToJsComponent(nodeKnowledge.getName()) + "', module: '" + moduleKnowledge.getBase() + "', " +
+								"location: 'Backend', package: 'messaging'})";
+
+				runQueryOnMEANGraph(messagingEndpointQuery);
+				connectNodesInBackend(moduleKnowledge.getBase());
+				break;
+			}
 		}
 	}
 
@@ -166,8 +213,8 @@ public class CreateMEANArchitectureGraph {
 					"', location: 'Backend', package: 'scheduling'})";
 			createSchedulingFunctionalityQuery =
 					"MATCH(n:" + ontologyKnowledgeService.findByJavaEEComponent(schedulingFeatureJavaEEComponent).getMEANComponent() +
-							") MERGE(f:Functionality {name: '" + ontologyKnowledgeService.findByJavaEEComponent(schedulingFeatureJavaEEComponent).getDefaultLibrary() + "', module" +
-							":'" + moduleKnowledge.getBase() + "', location: 'Backend', package: 'scheduling'}) MERGE (n)-[:IMPORTS]-(f)";
+							") where n.module='" + moduleKnowledge.getBase() + "' MERGE(f:Functionality {name: '" + ontologyKnowledgeService.findByJavaEEComponent(schedulingFeatureJavaEEComponent).getDefaultLibrary()
+							+ "', module:'" + moduleKnowledge.getBase() + "', location: 'Backend', package: 'scheduling'}) MERGE (n)-[:IMPORTS]-(f)";
 			this.runQueryOnMEANGraph(createSchedulingFeatureQuery);
 			this.runQueryOnMEANGraph(createSchedulingFunctionalityQuery);
 			// now find out which features are scheduled
@@ -194,6 +241,7 @@ public class CreateMEANArchitectureGraph {
 							System.out.println(createSchedulerToControllerRelationQuery);
 							this.runQueryOnMEANGraph(createSchedulerToControllerRelationQuery);
 						}
+						break;
 					}
 				}
 			}
@@ -442,7 +490,7 @@ public class CreateMEANArchitectureGraph {
 	}
 
 	public void addMissingComponentToModule(String component, String moduleId){
-		String query = "MERGE (n:" + component + " {id:'" + moduleId + "'})";
+		String query = "MERGE (n:" + component + " {id:'" + moduleId + "', location:'Backend'})";
 		this.runQueryOnMEANGraph(query);
 	}
 
@@ -485,6 +533,8 @@ public class CreateMEANArchitectureGraph {
 				+ "AND m.name='express.js' MERGE(n)-[:IMPORTS]->(m)");
 		queries.add("MATCH (n:Route) where n.module='" + module + "' MATCH (m:Middleware) where m.module='" + module  + "' MERGE " +
 				"(n)-[:FORWARDS_REQUEST]->(m)");
+		queries.add("MATCH (n:Route) where n.module='" + module + "' MATCH (m:Class) where m.module='" + module  + "' MERGE " +
+				"(n)-[:USES]->(m)");
 		queries.add("MATCH (n:SoapRoute) where n.module='" + module + "' MATCH (m:Functionality) where m.module='" + module
 				+ "' AND m.name='soap' MERGE(n)-[:IMPORTS]->(m)");
 		queries.add("MATCH (n:Middleware) where n.module='" + module + "' MATCH (m:RestController) where m.module='" + module  +
@@ -495,6 +545,10 @@ public class CreateMEANArchitectureGraph {
 				"' MERGE(n)-[:FORWARDS_REQUEST]->(m)");
 		queries.add("MATCH (n:SoapController) where n.module='" + module + "' MATCH (m:Class) where m.module='" + module  +
 				"' MERGE(n)-[:FORWARDS_REQUEST]->(m)");
+		queries.add("MATCH (n:Class) where n.module='" + module + "' MATCH (m:Functionality) where m.module='" + module  +
+				"' MERGE(n)-[:USES]->(m)");
+		queries.add("MATCH (n:External) where n.location='Backend' MATCH (m:App) where m.location='Backend' MERGE(n)-[:ASSOCIATED_WITH]->" +
+				"(m)");
 		//... execute
 		for(String query : queries) {
 			this.runQueryOnMEANGraph(query);
