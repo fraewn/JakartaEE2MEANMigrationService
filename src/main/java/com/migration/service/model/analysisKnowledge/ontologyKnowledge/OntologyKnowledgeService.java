@@ -89,7 +89,7 @@ public class OntologyKnowledgeService {
 			ontologyKnowledge.add(new OntologyKnowledge("Presentation Layer", "org.primefaces.PrimeFaces","View", "View design", "View.java", "Frontend",
 					"component_html", false, ""));
 			ontologyKnowledge.add(new OntologyKnowledge("Presentation Layer", "javax.faces","View Controller", "View logic, controlling of " +
-					"calls to other layers", "", "Frontend", "component_ts", true, "Angular Materials"));
+					"calls to other layers", "", "Frontend", "Component", true, "Angular Materials"));
 			// hier würde "DataService.java" als Keyword helfen
 			ontologyKnowledge.add(new OntologyKnowledge("Presentation Layer", "","View Data Transformation", "Transforms data from " +
 					"entities in the form the view classes need it", "Object.java", "Frontend", "service_ts", false ,

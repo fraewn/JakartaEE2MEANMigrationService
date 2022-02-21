@@ -27,7 +27,8 @@ public class CreateMEANArchitectureGraph {
 
 	private Driver MEANGraphDriver;
 	private Session MEANGraphSession;
-
+	List<ModuleKnowledge> frontendEntityProcessingModuleKnowledge = new ArrayList<>();
+	List<ModuleKnowledge> frontendFeatureModuleKnowledge = new ArrayList<>();
 	private ModuleKnowledgeService moduleKnowledgeService;
 	private NodeKnowledgeService nodeKnowledgeService;
 	private OntologyKnowledgeService ontologyKnowledgeService;
@@ -85,8 +86,8 @@ public class CreateMEANArchitectureGraph {
 	}
 
 	public void createArchitecture(){
-		boolean componentFound = false;
-		this.addMissingComponentToModule("App", "BACKEND_APP");
+		this.addMissingComponentToModule("App", "BACKEND_APP", "Backend");
+		this.addMissingComponentToModule("App", "FRONTEND_APP", "Frontend");
 		List<ModuleKnowledge> moduleKnowledgeList = moduleKnowledgeService.findAllFinalModules();
 		for (ModuleKnowledge moduleKnowledgeInstance : moduleKnowledgeList) {
 			// for each component in a moduleCluster
@@ -119,10 +120,221 @@ public class CreateMEANArchitectureGraph {
 				}
 				if(moduleKnowledgeInstance.getUsage().equals(("Backend Feature"))){
 					this.processBackendFeature(moduleKnowledgeInstance);
+
+				}
+				if(moduleKnowledgeInstance.getUsage().equals("Frontend Entity Processing")){
+					this.frontendEntityProcessingModuleKnowledge.add(moduleKnowledgeInstance);
+				}
+				if(moduleKnowledgeInstance.getUsage().equals("Frontend Feature")){
+					this.frontendFeatureModuleKnowledge.add(moduleKnowledgeInstance);
+
 				}
 			}
 		}
 		this.persistCallsToOtherModules(entityModels);
+		this.processFrontendFeature();
+		this.processFrontendEntityProcessingFeature();
+		System.out.println("Architecture creation done");
+	}
+
+	public void processFrontendFeature(){
+		/*for(ModuleKnowledge moduleKnowledge : this.frontendFeatureModuleKnowledge){
+
+		}*/
+	}
+
+	public HashMap<ModuleKnowledge, EntityModel> matchEntitiesToModules(){
+		HashMap<ModuleKnowledge, EntityModel> entitiesComponentsDic = new HashMap<>();
+		for(ModuleKnowledge moduleKnowledge : this.frontendEntityProcessingModuleKnowledge) {
+			// match the entity that is processed by the module
+			for (String usedModule : moduleKnowledge.getUsedModules()) {
+				// find entity that is processed
+				for (String model : this.findModelByModuleInGraph(usedModule)) {
+					for (EntityModel entityModel : this.entityModels) {
+						if (this.removeJsFromClassName(model).equals(this.removeJavaFromClassName(entityModel.getName()))) {
+							entitiesComponentsDic.put(moduleKnowledge, entityModel);
+							break;
+						}
+					}
+				}
+			}
+		}
+		System.out.println(entitiesComponentsDic);
+		return entitiesComponentsDic;
+	}
+
+	public void processFrontendEntityProcessingFeature(){
+		HashMap<ModuleKnowledge, EntityModel> entitiesComponentsDic = this.matchEntitiesToModules();
+		boolean authModuleAlreadyCreated = false;
+		for(ModuleKnowledge moduleKnowledge : this.frontendEntityProcessingModuleKnowledge) {
+			String entity = this.removeJavaFromClassName(entitiesComponentsDic.get(moduleKnowledge).getName().toLowerCase());
+
+			// create module with service, interface and subject
+			String interfaceName = entity + ".model.ts";
+			String moduleName = entity + ".module.ts";
+			String serviceName = entity + ".service.ts";
+			String subjectName = entity + "Subject";
+			String interfaceQuery =
+					"MERGE(n:Interface {id:'" + interfaceName + "', module:'" + moduleName + "', package: '" + entity + "', location" +
+							":'Frontend'})";
+			String moduleQuery = "MERGE(n:Module {id:'" + moduleName + "', module:'" + moduleName + "', package: '" + entity + "', location" +
+					":'Frontend'})";
+			String serviceQuery = "MERGE(n:Service {id:'" + serviceName + "', module:'" + moduleName + "', package: '" + entity + "', location" +
+					":'Frontend'})";
+			String subjectQuery = "MERGE(n:Subject {id:'" + subjectName + "', module:'" + moduleName + "', package: '" + entity + "'," +
+					" location:'Frontend'})";
+			this.runQueryOnMEANGraph(interfaceQuery);
+			this.runQueryOnMEANGraph(moduleQuery);
+			this.runQueryOnMEANGraph(serviceQuery);
+			this.runQueryOnMEANGraph(subjectQuery);
+
+			// create components for the module
+			for (String component : moduleKnowledge.getModuleCluster()) {
+				String componentName = this.removeCommonJavaEENamesFromClassName(component);
+				NodeKnowledge nodeKnowledge = findNodeKnowledgeByClassName(component);
+
+				for (String interpretation : nodeKnowledge.getCalculatedInterpretation()) {
+					// e.g. LoginBean.java
+					if (interpretation.equals("View Controller")) {
+						// component
+						// automatic: + html + css
+						// automatic: oninit ondestroy
+						String entityName = entity + "-";
+						String packageName = entity;
+						String TsComponentName = entityName + this.removeCommonJavaEENamesFromClassName(nodeKnowledge.getName()) + ".component.ts";
+						String HtmlComponentName = entityName + this.removeCommonJavaEENamesFromClassName(nodeKnowledge.getName()) + ".component.html";
+						String CssComponentName = entityName + this.removeCommonJavaEENamesFromClassName(nodeKnowledge.getName()) + ".component.css";
+						String tsQuery =
+								"MERGE(n:" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent()
+										+ " {id:'" + TsComponentName + "', component: '" + componentName + "', module: '" + moduleName +
+										"', package:'" + packageName + "/component', location:'Frontend'})" ;
+						String htmlQuery =
+								"MERGE(n:" + "HTML" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent()
+										+ " {id:'" + HtmlComponentName + "', component: '" + componentName + "', module: '" + moduleName + "', package:'" + packageName +
+										"/component', location:'Frontend'})" ;
+						String cssQuery =
+								"MERGE(n:" + "CSS" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent()
+										+ " {id:'" + CssComponentName + "',  component: '" + componentName + "', module: '" + moduleName + "', package:'" + packageName +
+										"/component', location:'Frontend'})" ;
+						this.runQueryOnMEANGraph(tsQuery);
+						this.runQueryOnMEANGraph(htmlQuery);
+						this.runQueryOnMEANGraph(cssQuery);
+						this.connectFrontendNodesByComponent(componentName);
+					} else if (interpretation.equals("Authentication Management")) {
+						if(authModuleAlreadyCreated==false) {
+							// create Auth Module
+							String authServiceQuery = "Merge(n:Service {id:'auth.service.ts', module: 'auth', package:'auth', " +
+									"location:'Frontend'})";
+							String authGuardQuery =
+									"Merge(n:" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent()
+											+ " {id:'auth.guard.ts', module: 'auth', package:'auth', location:'Frontend'})";
+							String authGuardFunctionalityQuery =
+									"Merge(n:Functionality {name:'" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getDefaultLibrary() + "', " +
+											"module: 'auth', package:'auth', location:'Frontend'})";
+							String authModuleQuery =
+									"MERGE(n:Module {id:'auth.module.ts', module:'auth', package: 'auth', location" +
+											":'Frontend'})";
+							String authInterfaceQuery =
+									"MERGE(n:Interface {id:'auth.model.ts', module:'auth', package: 'auth', location" +
+											":'Frontend'})";
+							String authSubjectQuery =
+									"MERGE(n:Subject {id:'authSubject', module:'auth', package: 'auth', location" +
+											":'Frontend'})";
+							this.runQueryOnMEANGraph(authGuardQuery);
+							this.runQueryOnMEANGraph(authServiceQuery);
+							this.runQueryOnMEANGraph(authGuardFunctionalityQuery);
+							this.runQueryOnMEANGraph(authModuleQuery);
+							this.runQueryOnMEANGraph(authInterfaceQuery);
+							this.runQueryOnMEANGraph(authSubjectQuery);
+							// add relations
+							String mergeAuthServiceWithModel = "match(n:Service) where n.module='auth' match(m:Interface) where " +
+									"m.module='auth' merge(n)-[:USES]-(m)";
+							String mergeAuthGuardAndFunc =
+									"match(n:" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent() + ") " +
+											"where n.module='auth' match(m:Functionality) where m.module='auth' merge(n)-[:IMPORTS]-(m)";
+							String mergeAuthServiceWithSubject = "match(n:Service) where n.module='auth' match(m:Subject) where " +
+									"m.module='auth' merge(n)-[:CREATES]-(m)";
+							this.runQueryOnMEANGraph(mergeAuthServiceWithModel);
+							this.runQueryOnMEANGraph(mergeAuthGuardAndFunc);
+							authModuleAlreadyCreated = true;
+						}
+						this.runQueryOnMEANGraph("Match(n:Service) where n.module='" + moduleName + "' Match(m:" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent() + ") " +
+								"MERGE (m)-[:INJECTS]-(n)");
+						this.runQueryOnMEANGraph("Match(n:Component) where n.module='" + moduleName + "' Match(m:Service) where m" +
+								".module='auth' MERGE (m)-[:USES]-(n)");
+						this.runQueryOnMEANGraph("Match(n:Component) where n.module='" + moduleName + "' Match(m:Subject) where m" +
+								".module='auth' MERGE (m)-[:USES]-(n)");
+					}
+				}
+			}
+			this.connectFrontendNodesByModule(moduleName);
+		}
+		this.connectFrontendNodesByModule("auth");
+	}
+
+
+	public void connectFrontendNodesByModule(String module){
+		List<String> queries = new ArrayList<>();
+		queries.add("Match(n:Module) where n.module='" + module + "' Match(m:Component) where m.module='"+ module + "' Merge(n)" +
+				"-[:DECLARES]-(m)");
+		queries.add("Match(n:Service) where n.module='" + module + "' Match(m:Interface) where m.module='"+ module + "' Merge(n)" +
+				"-[:USES]-(m)");
+		queries.add("Match(n:Component) where n.module='" + module + "' Match(m:Interface) where m.module='"+ module + "' Merge(n)" +
+				"-[:USES]-(m)");
+		queries.add("Match(n:Component) where n.module='" + module + "' Match(m:Subject) where m.module='"+ module + "' Merge(n)" +
+				"-[:SUBSCRIBES_TO]-(m)");
+		queries.add("Match(n:Service) where n.module='" + module + "' Match(m:Subject) where m.module='"+ module + "' Merge(n)" +
+				"-[:CREATES]-(m)");
+		queries.add("Match(n:RoutingModule) Match(m:Component) Merge(n)-[:MANAGES_ROUTE_TO]-(m)");
+		queries.add("Match(n:Component) Merge(m:Functionality {name:'OnInit', location" +
+						":'Frontend'}) MERGE(n)-[:IMPLEMENTS]-(m)");
+		queries.add("Match(n:Component) Merge(m:Functionality {name:'OnDestroy', location" +
+				":'Frontend'}) MERGE(n)-[:IMPLEMENTS]-(m)");
+		queries.add("Match(n:App) where n.id='FRONTEND_APP' Match(m:Module) where m.module='" + module + "' MERGE(n)-[:INCLUDES]-(m)");
+		for(String query : queries){
+			this.runQueryOnMEANGraph(query);
+		}
+	}
+
+	public void connectFrontendNodesByComponent(String component){
+		List<String> queries = new ArrayList<>();
+		queries.add("Match(n:Component) where n.component='" + component + "' Match(m:HTMLComponent) where m.component='"+ component + "'" +
+				" " +
+				"Merge" +
+				"(n)" +
+				"-[:HAS]-(m)");
+		queries.add("Match(n:Component) where n.component='" + component + "' Match(m:CSSComponent) where m.component='"+ component + "' " +
+				"Merge(n)" +
+				"-[:HAS]-(m)");
+		queries.add("Match(n:Component) where n.component='" + component + "' Match(m:Service) where m.component='"+ component + "' Merge" +
+				"(n)" +
+				"-[:USES]-(m)");
+		for(String query : queries){
+			this.runQueryOnMEANGraph(query);
+		}
+	}
+
+	public String removeJavaFromClassName(String className){
+		return className.toLowerCase().replace(".java", "");
+	}
+
+	public String removeJsFromClassName(String className){
+		return className.toLowerCase().replace(".js", "");
+	}
+
+	public String removeCommonJavaEENamesFromClassName(String className){
+		className = className.toLowerCase().replace("bean", "");
+		className = className.toLowerCase().replace("view", "");
+		className = className.toLowerCase().replace(".java", "");
+		return className;
+	}
+
+	public List<String> findModelByModuleInGraph(String moduleId){
+		String query = "Match(n:Model) where n.module='" + moduleId + "' return n";
+		Driver driver = setUpNeo4jDriver("MEAN");
+		try(Session session = setUpNeo4jSession(driver)) {
+			return session.run(query).list(result -> result.get("n").asNode().get("id").asString());
+		}
 	}
 
 	public void processBackendFeature(ModuleKnowledge backendFeatureKnowledge){
@@ -434,6 +646,10 @@ public class CreateMEANArchitectureGraph {
 		return className.replace(".java", "") + ".js";
 	}
 
+	public String renameToTsComponent(String className){
+		return className.replace(".java", "") + ".ts";
+	}
+
 	public void runQueryOnJavaEEGraph(String query){
 		try(Session session = this.javaEEGraphSession) {
 			session.run(query);
@@ -522,8 +738,8 @@ public class CreateMEANArchitectureGraph {
 		return entityModel;
 	}
 
-	public void addMissingComponentToModule(String component, String moduleId){
-		String query = "MERGE (n:" + component + " {id:'" + moduleId + "', location:'Backend'})";
+	public void addMissingComponentToModule(String component, String moduleId, String location){
+		String query = "MERGE (n:" + component + " {id:'" + moduleId + "', location:'" + location + "'})";
 		this.runQueryOnMEANGraph(query);
 	}
 
@@ -548,9 +764,9 @@ public class CreateMEANArchitectureGraph {
 
 	public void connectNodesInBackend(String module){
 		List<String> queries = new ArrayList<>();
-		queries.add("MATCH (n:App) MATCH (m:Route) where m.module='" + module + "' MERGE (n)" +
+		queries.add("MATCH (n:App) where n.location='Backend' MATCH (m:Route) where m.module='" + module + "' MERGE (n)" +
 				"-[:INCLUDES]->(m)");
-		queries.add("MATCH (n:App) MATCH (m:SoapRoute) where m.module='" + module + "' MERGE (n)" +
+		queries.add("MATCH (n:App) where n.location='Backend' MATCH (m:SoapRoute) where m.module='" + module + "' MERGE (n)" +
 				"-[:INCLUDES]->(m)");
 		queries.add("MATCH (n:RestController) where n.module='" + module + "' MATCH (m:Model) where m.module='" + module  + "' MERGE " +
 				"(n)-[:USES]->(m)");
