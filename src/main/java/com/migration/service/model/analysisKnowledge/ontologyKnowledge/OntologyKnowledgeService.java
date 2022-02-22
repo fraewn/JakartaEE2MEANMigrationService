@@ -87,7 +87,7 @@ public class OntologyKnowledgeService {
 					" mechanisms", "", "Frontend", "AuthGuard", true, "CanActivate"));
 			// keyword "View.java" hilft hier, noch besser zu unterscheiden, weil gibt ja hier sehr viele matches die javax.faces nutzen
 			ontologyKnowledge.add(new OntologyKnowledge("Presentation Layer", "org.primefaces.PrimeFaces","View", "View design", "View.java", "Frontend",
-					"component_html", false, ""));
+					"Component", false, ""));
 			ontologyKnowledge.add(new OntologyKnowledge("Presentation Layer", "javax.faces","View Controller", "View logic, controlling of " +
 					"calls to other layers", "", "Frontend", "Component", true, "Angular Materials"));
 			// hier würde "DataService.java" als Keyword helfen
