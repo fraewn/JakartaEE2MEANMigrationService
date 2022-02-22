@@ -136,6 +136,7 @@ public class CreateMEANArchitectureGraph {
 		this.persistCallsToOtherModules(entityModels);
 		this.processFrontendEntityProcessingFeature();
 		this.processFrontendFeature();
+		this.createStandardAngularModel();
 		this.entityModelService.insertAll(entityModels);
 		System.out.println("Architecture creation done");
 	}
@@ -175,31 +176,91 @@ public class CreateMEANArchitectureGraph {
 						this.runQueryOnMEANGraph(htmlQuery);
 						this.runQueryOnMEANGraph(cssQuery);
 						this.connectFrontendNodesByComponent(componentName);
+						if(moduleKnowledge.getUsedModules()!=null) {
+							for (String usedModule : moduleKnowledge.getUsedModules()) {
+								for(String compId : componentNames) {
+									String query = "Match(n:Module) where n.id='" + this.findModuleByBaseInGraph(usedModule).get(0) + "' " +
+											"Match(m:Component) where m.id='" + compId + "' Merge(m)" +
+											"-[:LINKS_TO_COMPONENTS_WITHIN]-(n)";
+									this.runQueryOnMEANGraph(query);
+								}
+							}
+						}
+					}
+					if(interpretation.equals("Messaging Feature")){
+						String serviceName = componentName + ".service.ts";
+						String messageServiceQuery =
+								"MERGE(n:Service {id:'" + serviceName + "', module:'" + moduleName + "', package: '" + packageName + "', " +
+										"location:'Frontend', base:'" + moduleKnowledge.getBase() + "'})";
+						this.runQueryOnMEANGraph(messageServiceQuery);
+						if(moduleKnowledge.getUsedModules()!=null) {
+							for (String usedModule : moduleKnowledge.getUsedModules()) {
+								for(String compId : this.findComponentByBaseInGraph(usedModule)) {
+									String query = "Match(n:Component) where n.id='" + compId +
+											"' Match(m:Service) where m.id='" + serviceName + "' Merge(n)" +
+											"-[:USES]-(m)";
+									this.runQueryOnMEANGraph(query);
+								}
+							}
+						}
 					}
 				}
-
 			}
-			if(moduleKnowledge.getUsedModules()!=null) {
-				for (String usedModule : moduleKnowledge.getUsedModules()) {
-					for(String componentName : componentNames) {
-						String query = "Match(n:Module) where n.id='" + this.findModuleByBaseInGraph(usedModule).get(0) + "' " +
-								"Match(m:Component) where m.id='" + componentName + "' Merge(m)" +
-								"-[:LINKS_TO_COMPONENTS_WITHIN]-(n)";
 
-						this.runQueryOnMEANGraph(query);
-					}
-				}
-			}
 
 		}
 	}
 
 	public void createStandardAngularModel(){
+		// component
+		String tsQuery =
+				"MERGE(n:Component {id:'app.component.ts', component: 'app', module: 'app', package:'/', location:'Frontend'})";
+		String htmlQuery =
+				"MERGE(n:HTMLComponent {id:'app.component.html', component: 'app', module: 'app', package:'/', location:'Frontend'})";
+		String cssQuery =
+				"MERGE(n:CSSComponent {id:'app.component.css',  component: 'app', module: 'app', package:'/', location:'Frontend'})";
 
+		this.runQueryOnMEANGraph(tsQuery);
+		this.runQueryOnMEANGraph(htmlQuery);
+		this.runQueryOnMEANGraph(cssQuery);
+		this.connectFrontendNodesByComponent("app");
+
+		// module
+		String moduleQuery = "MERGE(n:Module {id:'app.module.ts', module: 'app', package:'/', " +
+				"location:'Frontend'})";
+		this.runQueryOnMEANGraph(moduleQuery);
+		// app module imports all other modules
+		String mergeAllModuleWithoutDeclaration = "Match(n:Module) where n.id<>'app.module.ts' match(m:Module) where m.id='app.module.ts'" +
+				" MERGE(m)" +
+				"-[:IMPORTS]-(n)";
+		this.runQueryOnMEANGraph(mergeAllModuleWithoutDeclaration);
+		// app module declares all components that have not been declared by other modules
+		for(String componentId : this.findLonelyComponentsInGraph()){
+			String mergeModuleWithLonelyComponent = "Match(n:Component) where n.id='" + componentId + "' match(m:Module) where m" +
+					".id='app.module.ts' Merge(m)-[:DECLARES]-(n)";
+			this.runQueryOnMEANGraph(mergeModuleWithLonelyComponent);
+		}
+	}
+
+	public List<String> findLonelyComponentsInGraph(){
+		String query = "MATCH (m:Component) WHERE NOT ()-[:DECLARES]-(m) RETURN m";
+		Driver driver = setUpNeo4jDriver("MEAN");
+		try(Session session = setUpNeo4jSession(driver)) {
+			return session.run(query).list(result -> result.get("m").asNode().get("id").asString());
+		}
 	}
 
 	public List<String> findModuleByBaseInGraph(String base){
 		String query = "Match(n:Module) where n.base='" + base + "' return n";
+		System.out.println(query);
+		Driver driver = setUpNeo4jDriver("MEAN");
+		try(Session session = setUpNeo4jSession(driver)) {
+			return session.run(query).list(result -> result.get("n").asNode().get("id").asString());
+		}
+	}
+
+	public List<String> findComponentByBaseInGraph(String base){
+		String query = "Match(n:Component) where n.base='" + base + "' return n";
 		System.out.println(query);
 		Driver driver = setUpNeo4jDriver("MEAN");
 		try(Session session = setUpNeo4jSession(driver)) {
@@ -298,9 +359,9 @@ public class CreateMEANArchitectureGraph {
 							String authGuardFunctionalityQuery =
 									"Merge(n:Functionality {name:'" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getDefaultLibrary() + "', " +
 											"module: 'auth', package:'auth', location:'Frontend'})";
-							String authModuleQuery =
-									"MERGE(n:Module {id:'auth.module.ts', module:'auth', package: 'auth', location" +
-											":'Frontend'})";
+							//String authModuleQuery =
+									//"MERGE(n:Module {id:'auth.module.ts', module:'auth', package: 'auth', location" +
+									//		":'Frontend'})";
 							String authInterfaceQuery =
 									"MERGE(n:Interface {id:'auth.model.ts', module:'auth', package: 'auth', location" +
 											":'Frontend'})";
@@ -311,7 +372,7 @@ public class CreateMEANArchitectureGraph {
 							this.runQueryOnMEANGraph(authServiceQuery);
 							this.runQueryOnMEANGraph(authGuardFunctionalityQuery);
 							// auth module is not necessary since login/logout belong to user module
-							this.runQueryOnMEANGraph(authModuleQuery);
+							//this.runQueryOnMEANGraph(authModuleQuery);
 							this.runQueryOnMEANGraph(authInterfaceQuery);
 							this.runQueryOnMEANGraph(authSubjectQuery);
 							// add relations
@@ -359,7 +420,7 @@ public class CreateMEANArchitectureGraph {
 						":'Frontend'}) MERGE(n)-[:IMPLEMENTS]-(m)");
 		queries.add("Match(n:Component) Merge(m:Functionality {name:'OnDestroy', location" +
 				":'Frontend'}) MERGE(n)-[:IMPLEMENTS]-(m)");
-		queries.add("Match(n:App) where n.id='FRONTEND_APP' Match(m:Module) where m.module='" + module + "' MERGE(n)-[:INCLUDES]-(m)");
+		queries.add("Match(n:App) where n.id='FRONTEND_APP' Match(m:Module) where m.id='app.module.ts' MERGE(n)-[:INCLUDES]-(m)");
 		for(String query : queries){
 			this.runQueryOnMEANGraph(query);
 		}
