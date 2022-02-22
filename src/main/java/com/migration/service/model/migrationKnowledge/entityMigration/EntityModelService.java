@@ -37,4 +37,5 @@ public class EntityModelService {
 	public void deleteOne(EntityModel entityModel){
 		entityModelRepository.delete(entityModel);
 	}
+
 }

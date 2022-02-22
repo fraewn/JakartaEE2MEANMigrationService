@@ -133,9 +133,14 @@ public class CreateMEANArchitectureGraph {
 				}
 			}
 		}
+
+
 		this.persistCallsToOtherModules(entityModels);
+		System.out.println("++++++++ created backend features architecture ++++++++");
 		this.processFrontendEntityProcessingFeature();
+		System.out.println("++++++++ created frontend entity processing architecture ++++++++");
 		this.processFrontendFeature();
+		System.out.println("++++++++ created frontend feature architecture ++++++++");
 		this.createStandardAngularModel();
 		this.entityModelService.insertAll(entityModels);
 		System.out.println("Architecture creation done");
@@ -253,7 +258,6 @@ public class CreateMEANArchitectureGraph {
 
 	public List<String> findModuleByBaseInGraph(String base){
 		String query = "Match(n:Module) where n.base='" + base + "' return n";
-		System.out.println(query);
 		Driver driver = setUpNeo4jDriver("MEAN");
 		try(Session session = setUpNeo4jSession(driver)) {
 			return session.run(query).list(result -> result.get("n").asNode().get("id").asString());
@@ -262,7 +266,6 @@ public class CreateMEANArchitectureGraph {
 
 	public List<String> findComponentByBaseInGraph(String base){
 		String query = "Match(n:Component) where n.base='" + base + "' return n";
-		System.out.println(query);
 		Driver driver = setUpNeo4jDriver("MEAN");
 		try(Session session = setUpNeo4jSession(driver)) {
 			return session.run(query).list(result -> result.get("n").asNode().get("id").asString());
@@ -516,7 +519,6 @@ public class CreateMEANArchitectureGraph {
 				"Match(n:Middleware) where n.module='" + authFeatureModuleKnowledge.getBase() + "' MATCH(m:RestController) where m" +
 						".module='" + usingModuleKnowledge.getBase() +
 				"' MERGE (n)-[:FORWARDS_REQUEST]-(m)";
-		System.out.println(mergeQuery);
 		this.runQueryOnMEANGraph(mergeQuery);
 		this.runQueryOnMEANGraph(deleteQuery);
 		this.runQueryOnMEANGraph(reMergeQuery);
@@ -536,7 +538,6 @@ public class CreateMEANArchitectureGraph {
 				"' MERGE " +
 				"(n)" +
 				"-[:USES]-(m)";
-		System.out.println(mergeQuery);
 		this.runQueryOnMEANGraph(mergeQuery);
 	}
 
@@ -616,7 +617,6 @@ public class CreateMEANArchitectureGraph {
 									"Match(n:" + ontologyKnowledgeService.findByJavaEEComponent(schedulingFeatureJavaEEComponent).getMEANComponent()
 											+ " {id:'" + this.renameToJsComponent(componentKnowledge.getName()) + "'}) Match(m:RestController {module:'" + moduleCalledByBatchFeature + "'}) MERGE (n)" +
 											"-[:CALLS]-(m)";
-							System.out.println(createSchedulerToControllerRelationQuery);
 							this.runQueryOnMEANGraph(createSchedulerToControllerRelationQuery);
 						}
 						break;
@@ -661,12 +661,13 @@ public class CreateMEANArchitectureGraph {
 		int routeCount=0;
 		int soapApiCount = 0;
 
-
+		String transactionFeature="Transaction Feature";
 		String soapAPIJavaEEComponent="SOAP API";
 		String wsdlEndpointJavaEEComponent="WSDL Endpoint";
 		for(String component : moduleKnowledge.getModuleCluster()){
 			NodeKnowledge nodeKnowledge = this.findNodeKnowledgeByClassName(component);
 			moduleName = renameToJsComponent(component);
+
 			// model
 			// (additional) soap route
 			if(nodeKnowledge.getCalculatedInterpretation().contains(soapAPIJavaEEComponent)){
@@ -692,6 +693,11 @@ public class CreateMEANArchitectureGraph {
 			}
 			else {
 				for (String interpretation : nodeKnowledge.getCalculatedInterpretation()) {
+					if(interpretation.equals(transactionFeature)){
+						query =
+								query + " MERGE (trans:Functionality" + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() +
+										"', location: '" + meanLocation + "', name: '" + ontologyKnowledgeService.findByJavaEEComponent(transactionFeature).getDefaultLibrary() + "'})";
+					}
 
 					if (interpretation.equals("Entity Implementation")) {
 						String associatedMEANComponent =
@@ -710,6 +716,21 @@ public class CreateMEANArchitectureGraph {
 						EntityModel entityModel = this.createBackendModel(component);
 						entityModels.add(entityModel);
 						this.persistEntityModel(entityModel);
+						if(moduleKnowledge.getUsedModules()!=null) {
+							for (String usedModule : moduleKnowledge.getUsedModules()) {
+								ModuleKnowledge usedModuleKnowledge = moduleKnowledgeService.findModuleKnowledgeByBase(usedModule);
+								for (String comp : usedModuleKnowledge.getModuleCluster()) {
+									NodeKnowledge nodeKnowledgeInstance = this.findNodeKnowledgeByClassName(comp);
+									if (nodeKnowledgeInstance.getCalculatedInterpretation().contains("Batch Feature")) {
+										entityModels.remove(entityModel);
+										entityModel.setBatchMethodNeeded(true);
+										entityModelService.insertOne(entityModel);
+										entityModels.add(entityModel);
+										break;
+									}
+								}
+							}
+						}
 					}
 					// controller
 					else if (interpretation.equals("Data Access Object")) {
@@ -719,6 +740,7 @@ public class CreateMEANArchitectureGraph {
 								query + " MERGE (m" + modelCount + ":" + associatedMEANComponent + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() + "', location: '" + meanLocation + "', package: " +
 										"'controller'})";
 						modelCount++;
+
 					}
 					// route
 					else if (interpretation.equals("Service")) {
@@ -742,20 +764,16 @@ public class CreateMEANArchitectureGraph {
 		this.runQueryOnMEANGraph(query);
 		// connect nodes
 		connectNodesInBackend(moduleKnowledge.getBase());
-
+		System.out.println("++++++++ created entity backend processing architecture ++++++++");
 	}
 
 	public void persistCallsToOtherModules(List<EntityModel> entityModels){
 		for(EntityModel entityModel : entityModels) {
-			System.out.println(entityModel.getName());
 			for (String attribute : entityModel.getAttributes()) {
 
 				if(entityModel.getAttributeIsRelatedOtherEntity().get(attribute)==true){
 					// does not work with User in reports (attribute like) because type is Set<User>  Match(n:Model {id:'Report.js'}) Match
 					// (m:Model {id:'Set<User>.js'}) MERGE (n)-[r:ManyToMany]-(m) SET r.name='liker'
-					System.out.println("Match(n:Model {id:'" + this.renameToJsComponent(entityModel.getName()) + "'}) Match(m:Model {id:'" + entityModel.getAttributeTypes().get(attribute) +
-							".js'}) MERGE (n)-[r:" + entityModel.getRelationTypes().get(attribute) + "]-(m) SET r.name='" + attribute +
-							"'");
 					this.runQueryOnMEANGraph("Match(n:Model {id:'" + this.renameToJsComponent(entityModel.getName()) + "'}) Match(m:Model {id:'" + entityModel.getAttributeTypes().get(attribute) +
 							".js'}) MERGE (n)-[r:" + entityModel.getRelationTypes().get(attribute) + "]-(m) SET r.name='" + attribute +
 							"'");
@@ -828,7 +846,6 @@ public class CreateMEANArchitectureGraph {
 		HashMap<String, String> relationTypes = new HashMap<>();
 		EntityModel entityModel = new EntityModel();
 		try {
-			System.out.println(this.javaEEGraphSession.run(query).next());
 			for(Record r : this.javaEEGraphSession.run(query).list()){
 				//System.out.println(r.asMap());
 				JSONParser parser = new JSONParser();
@@ -929,6 +946,8 @@ public class CreateMEANArchitectureGraph {
 				"' MERGE(n)-[:FORWARDS_REQUEST]->(m)");
 		queries.add("MATCH (n:Class) where n.module='" + module + "' MATCH (m:Functionality) where m.module='" + module  +
 				"' MERGE(n)-[:USES]->(m)");
+		queries.add("MATCH (n:RestController) where n.module='" + module + "' MATCH (m:Functionality) where m.module='" + module  + "' " +
+				"AND m.name='mongoose transactions' MERGE(n)-[:IMPORTS]->(m)");
 		queries.add("MATCH (n:External) where n.location='Backend' MATCH (m:App) where m.location='Backend' MERGE(n)-[:ASSOCIATED_WITH]->" +
 				"(m)");
 		//... execute
@@ -949,7 +968,6 @@ public class CreateMEANArchitectureGraph {
 		// ReportServiceImpl -> Report und dann setzt da die Mean component endung dran
 		String query = "MERGE (n:" + meanComponent + " {name: '" + this.shortenClassNameToEntityBasedBackendClassName(className)
 				+ "', id:'" + moduleBase + "', location: '" + meanLocation + "'})";
-		System.out.println(query);
 		Driver driver = setUpNeo4jDriver("MEAN");
 		try(Session session = setUpNeo4jSession(driver)) {
 			session.run(query);

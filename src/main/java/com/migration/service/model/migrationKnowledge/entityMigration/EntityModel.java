@@ -27,7 +27,15 @@ public class EntityModel {
 	private boolean writeMany;
 	private boolean deleteOne;
 	private boolean deleteMany;
-	private HashMap<String, String> batchMethods;
+	private boolean batchMethodNeeded;
+
+	public boolean isBatchMethodNeeded() {
+		return batchMethodNeeded;
+	}
+
+	public void setBatchMethodNeeded(boolean batchMethodNeeded) {
+		this.batchMethodNeeded = batchMethodNeeded;
+	}
 
 	public String getName() {
 		return name;
