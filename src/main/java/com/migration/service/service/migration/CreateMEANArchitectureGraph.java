@@ -240,6 +240,7 @@ public class CreateMEANArchitectureGraph {
 					".id='app.module.ts' Merge(m)-[:DECLARES]-(n)";
 			this.runQueryOnMEANGraph(mergeModuleWithLonelyComponent);
 		}
+		this.runQueryOnMEANGraph("Match(n:App) where n.id='FRONTEND_APP' Match(m:Module) where m.id='app.module.ts' MERGE(n)-[:INCLUDES]-(m)");
 	}
 
 	public List<String> findLonelyComponentsInGraph(){
@@ -391,9 +392,11 @@ public class CreateMEANArchitectureGraph {
 						this.runQueryOnMEANGraph("Match(n:Service) where n.module='" + moduleName + "' Match(m:" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent() + ") " +
 								"MERGE (m)-[:INJECTS]-(n)");
 						this.runQueryOnMEANGraph("Match(n:Component) where n.module='" + moduleName + "' Match(m:Service) where m" +
-								".module='auth' MERGE (m)-[:USES]-(n)");
+								".module='auth' MERGE (n)-[:USES]-(m)");
 						this.runQueryOnMEANGraph("Match(n:Component) where n.module='" + moduleName + "' Match(m:Subject) where m" +
 								".module='auth' MERGE (n)-[:SUBSCRIBES_TO]-(m)");
+						this.runQueryOnMEANGraph("Match(n:Component) where n.module='" + moduleName + "' Match(m:Interface) where m" +
+								".module='auth' MERGE (n)-[:USES]-(m)");
 					}
 				}
 			}
