@@ -31,6 +31,7 @@ public class CreateMEANArchitectureGraph {
 	List<ModuleKnowledge> frontendFeatureModuleKnowledge = new ArrayList<>();
 	List<ModuleKnowledge> backendFeatureModuleKnowledge = new ArrayList<>();
 	HashMap<ModuleKnowledge,List<ModuleKnowledge>> backendFeatureAssociations = new HashMap<>();
+	HashMap<String, List<String>> backendEntityProcessingModuleAssociations = new HashMap<>();
 	private ModuleKnowledgeService moduleKnowledgeService;
 	private NodeKnowledgeService nodeKnowledgeService;
 	private OntologyKnowledgeService ontologyKnowledgeService;
@@ -126,6 +127,7 @@ public class CreateMEANArchitectureGraph {
 								}
 							}
 						}
+
 					}
 				}
 				if(moduleKnowledgeInstance.getUsage().equals(("Backend Feature"))){
@@ -147,6 +149,7 @@ public class CreateMEANArchitectureGraph {
 		this.processBackendFeature();
 		System.out.println("++++++++ created backend features architecture ++++++++");
 		this.processBackendFeatureAssocations();
+		this.processBackendEntityProcessingAssociations();
 		this.processFrontendEntityProcessingFeature();
 		System.out.println("++++++++ created frontend entity processing architecture ++++++++");
 		this.processFrontendFeature();
@@ -154,6 +157,17 @@ public class CreateMEANArchitectureGraph {
 		this.createStandardAngularModel();
 		this.entityModelService.insertAll(entityModels);
 		System.out.println("Architecture creation done");
+	}
+
+	public void processBackendEntityProcessingAssociations(){
+		for (Map.Entry<String, List<String>> entry : this.backendEntityProcessingModuleAssociations.entrySet()) {
+			for(String connectedController : entry.getValue()){
+				String restControllerId = this.findRestControllerByBaseInGraph(connectedController).get(0);
+				String connectControllerQuery = "Match(n:RestController) where n.id='" + entry.getKey() + "' Match" +
+						"(m:RestController) where m.id='"+ restControllerId + "' MERGE(n)-[:USES]-(m)";
+				this.runQueryOnMEANGraph(connectControllerQuery);
+			}
+		}
 	}
 
 	public void processBackendFeatureAssocations(){
@@ -298,6 +312,14 @@ public class CreateMEANArchitectureGraph {
 
 	public List<String> findComponentByBaseInGraph(String base){
 		String query = "Match(n:Component) where n.base='" + base + "' return n";
+		Driver driver = setUpNeo4jDriver("MEAN");
+		try(Session session = setUpNeo4jSession(driver)) {
+			return session.run(query).list(result -> result.get("n").asNode().get("id").asString());
+		}
+	}
+
+	public List<String> findRestControllerByBaseInGraph(String base){
+		String query = "Match(n:RestController) where n.module='" + base + "' return n";
 		Driver driver = setUpNeo4jDriver("MEAN");
 		try(Session session = setUpNeo4jSession(driver)) {
 			return session.run(query).list(result -> result.get("n").asNode().get("id").asString());
@@ -556,9 +578,17 @@ public class CreateMEANArchitectureGraph {
 	}
 
 	public void addAuthFeatureToBackendModel(ModuleKnowledge moduleKnowledge){
+		String authComponent="Authentication Feature";
 		String query = "MERGE(n:Middleware {id:'Auth.js', module:'" + moduleKnowledge.getBase() + "', location: 'Backend', package: " +
 				"'middleware'})";
+		String authFunctionalityQuery =
+				"MERGE(f:Functionality {name:'" + ontologyKnowledgeService.findByJavaEEComponent(authComponent).getDefaultLibrary() + "'," +
+						" location:'Backend', module:'" + moduleKnowledge.getBase() + "'})";
+		String connectMiddlewareToFunctionalityQuery = "Match(n:Middleware) where n.id='Auth.js' Match(f:Functionality) where f.name='"
+				+ ontologyKnowledgeService.findByJavaEEComponent(authComponent).getDefaultLibrary() + "' MERGE(n)-[:IMPORTS]-(f)";
 		this.runQueryOnMEANGraph(query);
+		this.runQueryOnMEANGraph(authFunctionalityQuery);
+		this.runQueryOnMEANGraph(connectMiddlewareToFunctionalityQuery);
 	}
 
 	public void addAuthFeatureUsage(ModuleKnowledge usingModuleKnowledge, ModuleKnowledge authFeatureModuleKnowledge){
@@ -788,6 +818,22 @@ public class CreateMEANArchitectureGraph {
 								query + " MERGE (m" + modelCount + ":" + associatedMEANComponent + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() + "', location: '" + meanLocation + "', package: " +
 										"'controller'})";
 						modelCount++;
+						if(moduleKnowledge.getUsedModules()!=null){
+							for(String usedModule : moduleKnowledge.getUsedModules()){
+								if(this.findRestControllerByBaseInGraph(usedModule).size()!=0) {
+									if(this.backendEntityProcessingModuleAssociations.get(moduleKnowledge)==null){
+										List<String> list = new ArrayList<>();
+										list.add(usedModule);
+										this.backendEntityProcessingModuleAssociations.put(moduleName, list);
+									}
+									else {
+										List<String> list = this.backendEntityProcessingModuleAssociations.get(moduleKnowledge);
+										list.add(usedModule);
+										this.backendEntityProcessingModuleAssociations.put(moduleName, list);
+									}
+								}
+							}
+						}
 
 					}
 					// route
