@@ -2,6 +2,7 @@ package com.migration.service.controller;
 
 
 import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledgeService;
+import com.migration.service.service.codeGeneration.GenerateCode;
 import com.migration.service.service.migration.CreateMEANArchitectureGraph;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledge;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledgeService;
@@ -22,6 +23,7 @@ public class MEANArchitectureGraphController {
 	private JavaEEGraphService javaEEGraphService;
 	private CreateMEANArchitectureGraph createMEANArchitectureGraph;
 	private OntologyKnowledgeService ontologyKnowledgeService;
+	private GenerateCode generateCode;
 
 	@CrossOrigin(origins = "http://localhost:8081")
 	@GetMapping("/javaEENode")
@@ -40,6 +42,13 @@ public class MEANArchitectureGraphController {
 	public ResponseEntity<List<ModuleKnowledge>> requestNode(){
 		String name = "Report.java";
 		createMEANArchitectureGraph.createBackendModel(name);
+		return new ResponseEntity<List<ModuleKnowledge>>(moduleKnowledgeService.findAllFunctionalityBasedModules(), HttpStatus.OK);
+	}
+
+	//@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/generate")
+	public ResponseEntity<List<ModuleKnowledge>> requestCodeGeneration(@RequestParam String path){
+		generateCode.executeCodeGeneration(path);
 		return new ResponseEntity<List<ModuleKnowledge>>(moduleKnowledgeService.findAllFunctionalityBasedModules(), HttpStatus.OK);
 	}
 }
