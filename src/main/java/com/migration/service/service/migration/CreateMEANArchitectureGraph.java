@@ -4,7 +4,6 @@ import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowled
 import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowledgeService;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledge;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledgeService;
-import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledge;
 import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledgeService;
 
 import com.migration.service.model.migrationKnowledge.entityMigration.EntityModel;
@@ -19,6 +18,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class CreateMEANArchitectureGraph {
@@ -29,12 +29,15 @@ public class CreateMEANArchitectureGraph {
 	private Session MEANGraphSession;
 	List<ModuleKnowledge> frontendEntityProcessingModuleKnowledge = new ArrayList<>();
 	List<ModuleKnowledge> frontendFeatureModuleKnowledge = new ArrayList<>();
+	List<ModuleKnowledge> backendFeatureModuleKnowledge = new ArrayList<>();
+	HashMap<ModuleKnowledge,List<ModuleKnowledge>> backendFeatureAssociations = new HashMap<>();
 	private ModuleKnowledgeService moduleKnowledgeService;
 	private NodeKnowledgeService nodeKnowledgeService;
 	private OntologyKnowledgeService ontologyKnowledgeService;
 	private EntityModelService entityModelService;
 
 	HashMap<ModuleKnowledge, EntityModel> entitiesComponentsDic = new HashMap<>();
+
 
 	List<EntityModel> entityModels = new ArrayList<>();
 
@@ -105,12 +108,17 @@ public class CreateMEANArchitectureGraph {
 								if (usedModule.equals(checkedModuleKnowledgeInstance.getBase())) {
 									for(String component : checkedModuleKnowledgeInstance.getModuleCluster()){
 										NodeKnowledge nodeKnowledge = nodeKnowledgeService.findByName(component);
-										if(nodeKnowledge.getCalculatedInterpretation().contains("Mail Feature")){
-											this.addEmailFeatureUsage(moduleKnowledgeInstance, checkedModuleKnowledgeInstance);
-											break;
-										}
-										else if(nodeKnowledge.getCalculatedInterpretation().contains("Authentication Feature")){
-											this.addAuthFeatureUsage(moduleKnowledgeInstance, checkedModuleKnowledgeInstance);
+										if(nodeKnowledge.getCalculatedInterpretation().contains("Mail Feature") || nodeKnowledge.getCalculatedInterpretation().contains("Authentication Feature")){
+											if(this.backendFeatureAssociations.get(moduleKnowledgeInstance)==null) {
+												List<ModuleKnowledge> list = new ArrayList<>();
+												list.add(checkedModuleKnowledgeInstance);
+												this.backendFeatureAssociations.put(moduleKnowledgeInstance, list);
+											}
+											else {
+												List<ModuleKnowledge> list = this.backendFeatureAssociations.get(moduleKnowledgeInstance);
+												list.add(checkedModuleKnowledgeInstance);
+												this.backendFeatureAssociations.put(moduleKnowledgeInstance, list);
+											}
 											break;
 										}
 									}
@@ -121,8 +129,7 @@ public class CreateMEANArchitectureGraph {
 					}
 				}
 				if(moduleKnowledgeInstance.getUsage().equals(("Backend Feature"))){
-					this.processBackendFeature(moduleKnowledgeInstance);
-
+					this.backendFeatureModuleKnowledge.add(moduleKnowledgeInstance);
 				}
 				if(moduleKnowledgeInstance.getUsage().equals("Frontend Entity Processing")){
 					this.frontendEntityProcessingModuleKnowledge.add(moduleKnowledgeInstance);
@@ -136,7 +143,10 @@ public class CreateMEANArchitectureGraph {
 
 
 		this.persistCallsToOtherModules(entityModels);
+		System.out.println("++++++++ created backend entity processing architecture ++++++++");
+		this.processBackendFeature();
 		System.out.println("++++++++ created backend features architecture ++++++++");
+		this.processBackendFeatureAssocations();
 		this.processFrontendEntityProcessingFeature();
 		System.out.println("++++++++ created frontend entity processing architecture ++++++++");
 		this.processFrontendFeature();
@@ -144,6 +154,28 @@ public class CreateMEANArchitectureGraph {
 		this.createStandardAngularModel();
 		this.entityModelService.insertAll(entityModels);
 		System.out.println("Architecture creation done");
+	}
+
+	public void processBackendFeatureAssocations(){
+		for (Map.Entry<ModuleKnowledge, List<ModuleKnowledge>> entry : this.backendFeatureAssociations.entrySet()) {
+			List<ModuleKnowledge> featureModuleKnowledgeList = entry.getValue();
+			for(ModuleKnowledge featureModuleKnowledge : featureModuleKnowledgeList) {
+				for (String component : featureModuleKnowledge.getModuleCluster()) {
+					NodeKnowledge nodeKnowledge = nodeKnowledgeService.findByName(component);
+					if (nodeKnowledge.getCalculatedInterpretation().contains("Mail Feature")) {
+						this.addEmailFeatureUsage(entry.getKey(), featureModuleKnowledge);
+					} else if (nodeKnowledge.getCalculatedInterpretation().contains("Authentication Feature")) {
+						this.addAuthFeatureUsage(entry.getKey(), featureModuleKnowledge);
+					}
+				}
+			}
+		}
+	}
+
+	public void processBackendFeature(){
+		for(ModuleKnowledge moduleKnowledge : this.backendFeatureModuleKnowledge){
+			this.processBackendFeature(moduleKnowledge);
+		}
 	}
 
 	public void processFrontendFeature(){
@@ -279,7 +311,7 @@ public class CreateMEANArchitectureGraph {
 				// find entity that is processed
 				for (String model : this.findModelByModuleInGraph(usedModule)) {
 					for (EntityModel entityModel : this.entityModels) {
-						if (this.removeJsFromClassName(model).equals(this.removeJavaFromClassName(entityModel.getName()))) {
+						if (this.removeJsFromClassName(model).equals(this.removeJavaFromClassNameAndChangeToLowerCase(entityModel.getName()))) {
 							entitiesComponentsDic.put(moduleKnowledge, entityModel);
 							break;
 						}
@@ -289,19 +321,31 @@ public class CreateMEANArchitectureGraph {
 		}
 	}
 
+	public List<String> findBackendEndpointOfModel(String entity){
+		String query = "match(n:Route)-[]-(m:RestController)-[]-(k:Model) where k.id='" + entity + ".js'" + " return n";
+		String queryWithMiddleware = "match(n:Route)-[]-(a:Middleware)-[]-(m:RestController)-[]-(k:Model) where k.id='" + entity +
+				".js'" + " return n";
+		Driver driver = setUpNeo4jDriver("MEAN");
+		try(Session session = setUpNeo4jSession(driver)) {
+			return session.run(query).list(result -> result.get("n").asNode().get("id").asString()).size() == 0 ?
+					session.run(queryWithMiddleware).list(result -> result.get("n").asNode().get("id").asString()) :
+					session.run(query).list(result -> result.get("n").asNode().get("id").asString());
+		}
+	}
+
 	public void processFrontendEntityProcessingFeature(){
 		this.matchEntitiesToModules();
 		List<String> entitiesAlreadyUsed = new ArrayList<>();
 		boolean authModuleAlreadyCreated = false;
 		for(ModuleKnowledge moduleKnowledge : this.frontendEntityProcessingModuleKnowledge) {
-			String entity = this.removeJavaFromClassName(entitiesComponentsDic.get(moduleKnowledge).getName().toLowerCase());
+			String entity = this.removeJavaFromClassNameAndChangeToLowerCase(entitiesComponentsDic.get(moduleKnowledge).getName().toLowerCase());
 
 			// create module with service, interface and subject
 			String interfaceName = entity + ".model.ts";
 			String moduleName = entity + ".module.ts";
 			String serviceName = entity + ".service.ts";
 			String subjectName = entity + "Subject";
-			if(entitiesAlreadyUsed.contains(entity)== false) {
+			if(entitiesAlreadyUsed.contains(entity)==false) {
 				String interfaceQuery =
 						"MERGE(n:Interface {id:'" + interfaceName + "', module:'" + moduleName + "', package: '" + entity + "', location" +
 								":'Frontend', base:'" + moduleKnowledge.getBase() + "'})";
@@ -316,6 +360,12 @@ public class CreateMEANArchitectureGraph {
 				this.runQueryOnMEANGraph(serviceQuery);
 				this.runQueryOnMEANGraph(subjectQuery);
 				entitiesAlreadyUsed.add(entity);
+				if(this.findBackendEndpointOfModel(this.removeJavaFromClassName(entitiesComponentsDic.get(moduleKnowledge).getName())).size()>0) {
+					String connectServiceToEndpointQuery =
+							"Match(s:Service) where s.id='" + serviceName + "' Match(n:Route) where n.id='"
+									+ this.findBackendEndpointOfModel(this.removeJavaFromClassName(entitiesComponentsDic.get(moduleKnowledge).getName())).get(0) + "' MERGE(s)-[:REST_CALL]-(n)";
+					this.runQueryOnMEANGraph(connectServiceToEndpointQuery);
+				}
 			}
 			// create components for the module
 			for (String component : moduleKnowledge.getModuleCluster()) {
@@ -450,9 +500,14 @@ public class CreateMEANArchitectureGraph {
 		}
 	}
 
-	public String removeJavaFromClassName(String className){
+	public String removeJavaFromClassNameAndChangeToLowerCase(String className){
 		return className.toLowerCase().replace(".java", "");
 	}
+
+	public String removeJavaFromClassName(String className){
+		return className.replace(".java", "");
+	}
+
 
 	public String removeJsFromClassName(String className){
 		return className.toLowerCase().replace(".js", "");
@@ -601,39 +656,32 @@ public class CreateMEANArchitectureGraph {
 				// find the module of the scheduled feature
 				ModuleKnowledge scheduledFeatureModuleKnowledge = moduleKnowledgeService.findModuleKnowledgeByBase(usedModule);
 				// for each component in the scheduled feature
-				for (String moduleComponent : moduleKnowledge.getModuleCluster()) {
+				for (String moduleComponent : scheduledFeatureModuleKnowledge.getModuleCluster()) {
 					NodeKnowledge scheduledFeatureComponentKnowledge = this.findNodeKnowledgeByClassName(moduleComponent);
 					// find all modules that are used by a scheduled module
 					// e.g. a scheduled batch feature:
-					if (scheduledFeatureComponentKnowledge.getCalculatedInterpretation().contains("Batch Feature")) {
+					if (scheduledFeatureComponentKnowledge.getCalculatedInterpretation().contains("Data Access Object")) {
+						createSchedulerToControllerRelationQuery =
+								"Match(n:" + ontologyKnowledgeService.findByJavaEEComponent(schedulingFeatureJavaEEComponent).getMEANComponent()
+										+ " {id:'" + this.renameToJsComponent(componentKnowledge.getName()) + "'}) Match(m:RestController" +
+										" {module:'" + scheduledFeatureModuleKnowledge.getBase() + "'}) MERGE (n)" +
+										"-[:CALLS]-(m)";
+						this.runQueryOnMEANGraph(createSchedulerToControllerRelationQuery);
 						// a batch feature is not visible as its own class in the mean stack architecture model
 						// instead it gets translated as a controller method (e.g. batch write xy)
 						// therefore, find all entity processing modules that the batch feature module uses
-						List<String> usedModules = scheduledFeatureModuleKnowledge.getUsedModules();
+						/*List<String> usedModules = scheduledFeatureModuleKnowledge.getUsedModules();
 						for (String moduleCalledByBatchFeature : usedModules) {
 							// add connection from the scheduler to the controller class, so it's visible in the modell
 							// that there are scheduled controller operations
-							createSchedulerToControllerRelationQuery =
-									"Match(n:" + ontologyKnowledgeService.findByJavaEEComponent(schedulingFeatureJavaEEComponent).getMEANComponent()
-											+ " {id:'" + this.renameToJsComponent(componentKnowledge.getName()) + "'}) Match(m:RestController {module:'" + moduleCalledByBatchFeature + "'}) MERGE (n)" +
-											"-[:CALLS]-(m)";
-							this.runQueryOnMEANGraph(createSchedulerToControllerRelationQuery);
-						}
+
+
+						}*/
 						break;
 					}
 				}
 			}
 		}
-
-
-	}
-
-	public void setBatchAttributeInController(){
-		// write to mongo
-	}
-
-	public void connectFeatureToEntityProcessingModule(String featureId, String entityProcessingModuleId){
-
 	}
 
 	public String getControllerClassForBackendEntityProcessingModule(String usedModule){
@@ -764,7 +812,6 @@ public class CreateMEANArchitectureGraph {
 		this.runQueryOnMEANGraph(query);
 		// connect nodes
 		connectNodesInBackend(moduleKnowledge.getBase());
-		System.out.println("++++++++ created entity backend processing architecture ++++++++");
 	}
 
 	public void persistCallsToOtherModules(List<EntityModel> entityModels){
