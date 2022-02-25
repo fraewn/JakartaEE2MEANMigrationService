@@ -57,6 +57,8 @@ public class FunctionalitySplitting {
 					}
 				}
 			}
+
+
 			for(ModuleKnowledge moduleKnowledge : moduleKnowledgeList){
 				if(moduleKnowledge.getBase().contains(functionality)){
 					skipLoop=true;

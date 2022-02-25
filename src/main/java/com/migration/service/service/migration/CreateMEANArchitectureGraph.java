@@ -238,6 +238,7 @@ public class CreateMEANArchitectureGraph {
 							}
 						}
 					}
+					// TODO check this
 					if(interpretation.equals("Messaging Feature")){
 						String serviceName = componentName + ".service.ts";
 						String messageServiceQuery =
@@ -291,7 +292,8 @@ public class CreateMEANArchitectureGraph {
 					".id='app.module.ts' Merge(m)-[:DECLARES]-(n)";
 			this.runQueryOnMEANGraph(mergeModuleWithLonelyComponent);
 		}
-		this.runQueryOnMEANGraph("Match(n:App) where n.id='FRONTEND_APP' Match(m:Module) where m.id='app.module.ts' MERGE(n)-[:INCLUDES]-(m)");
+		this.runQueryOnMEANGraph("Match(n:App) where n.id='FRONTEND_APP' Match(m:Module) where m.id='app.module.ts' MERGE(n)-[:DEFINES]-" +
+				"(m)");
 	}
 
 	public List<String> findLonelyComponentsInGraph(){
@@ -489,6 +491,8 @@ public class CreateMEANArchitectureGraph {
 				"-[:USES]-(m)");
 		queries.add("Match(n:Component) where n.module='" + module + "' Match(m:Interface) where m.module='"+ module + "' Merge(n)" +
 				"-[:USES]-(m)");
+		queries.add("Match(n:Component) where n.module='" + module + "' Match(m:Service) where m.module='"+ module + "' Merge(n)" +
+				"-[:USES]-(m)");
 		queries.add("Match(n:Component) where n.module='" + module + "' Match(m:Subject) where m.module='"+ module + "' Merge(n)" +
 				"-[:SUBSCRIBES_TO]-(m)");
 		queries.add("Match(n:Service) where n.module='" + module + "' Match(m:Subject) where m.module='"+ module + "' Merge(n)" +
@@ -498,7 +502,7 @@ public class CreateMEANArchitectureGraph {
 						":'Frontend'}) MERGE(n)-[:IMPLEMENTS]-(m)");
 		queries.add("Match(n:Component) Merge(m:Functionality {name:'OnDestroy', location" +
 				":'Frontend'}) MERGE(n)-[:IMPLEMENTS]-(m)");
-		queries.add("Match(n:App) where n.id='FRONTEND_APP' Match(m:Module) where m.id='app.module.ts' MERGE(n)-[:INCLUDES]-(m)");
+		queries.add("Match(n:App) where n.id='FRONTEND_APP' Match(m:Module) where m.id='app.module.ts' MERGE(n)-[:DEFINES]-(m)");
 		for(String query : queries){
 			this.runQueryOnMEANGraph(query);
 		}
@@ -1008,9 +1012,9 @@ public class CreateMEANArchitectureGraph {
 	public void connectNodesInBackend(String module){
 		List<String> queries = new ArrayList<>();
 		queries.add("MATCH (n:App) where n.location='Backend' MATCH (m:Route) where m.module='" + module + "' MERGE (n)" +
-				"-[:INCLUDES]->(m)");
+				"-[:DEFINES]->(m)");
 		queries.add("MATCH (n:App) where n.location='Backend' MATCH (m:SoapRoute) where m.module='" + module + "' MERGE (n)" +
-				"-[:INCLUDES]->(m)");
+				"-[:DEFINES]->(m)");
 		queries.add("MATCH (n:RestController) where n.module='" + module + "' MATCH (m:Model) where m.module='" + module  + "' MERGE " +
 				"(n)-[:USES]->(m)");
 		queries.add("MATCH (n:SoapController) where n.module='" + module + "' MATCH (m:Model) where m.module='" + module  + "' MERGE " +

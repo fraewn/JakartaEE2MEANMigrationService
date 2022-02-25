@@ -2,10 +2,12 @@ package com.migration.service.service.codeGeneration;
 
 import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowledgeService;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledgeService;
+import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledge;
 import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledgeService;
 import com.migration.service.model.migrationKnowledge.entityMigration.EntityModel;
 import com.migration.service.model.migrationKnowledge.entityMigration.EntityModelService;
 import com.migration.service.service.util.EnvironmentUtils;
+import com.mongodb.client.MongoCollection;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
@@ -102,7 +104,8 @@ public class GenerateCode {
 		for(Node node : controllerNodes){
 			String filename = node.get("id").asString();
 			String packageName = "\\" + node.get("package").asString() + "\\";
-			System.out.println("++++++ Code generation for file: " + filename + " at location: " + this.path + packageName + " +++++\n");
+			System.out.println("/*++++++ Code generation for file: " + filename + " at location: " + this.path + packageName + " " +
+					"+++++*/\n");
 			this.generateRestControllerCode(filename);
 		}
 	}
@@ -135,7 +138,13 @@ public class GenerateCode {
 			methods = methods + "exports." + this.removeComponentPartsFromName(method.replace("-","")) + " = (req, res, next) => { \n// " +
 					"TODO: Implement method  \n}\n";
 		}
-		String code = importedFunctionalities + otherControllerImport + ownControllerImport + methods;
+		// if transaction func -> dann bitte ein Todo mit mach transaction bitte entwickler
+		String todo="";
+		if(functionalities.contains("mongoose transactions")){
+			todo = "// TODO implement transactional logic \n\n";
+		}
+		String code = importedFunctionalities +  otherControllerImport + ownControllerImport + todo + methods;
+
 		System.out.println(code);
 	}
 
@@ -164,7 +173,8 @@ public class GenerateCode {
 			this.modelPackage = node.get("package").asString();
 			String packageName = "\\" + node.get("package").asString() + "\\";
 			String functionality = this.getFunctionalitiesAssociatedWithModel(filename).get(0);
-			System.out.println("++++++ Code generation for file: " + filename + " at location: " + this.path + packageName + " +++++\n");
+			System.out.println("/*++++++ Code generation for file: " + filename + " at location: " + this.path + packageName + " " +
+					"+++++*/\n");
 			this.generateModelCode(functionality, filename);
 
 		}
@@ -193,6 +203,8 @@ public class GenerateCode {
 		String code = functionalityImport + schemaDefintion + attributeDefintion + moduleExport;
 		System.out.println(code+"\n\n\n");
 	}
+
+
 
 
 
