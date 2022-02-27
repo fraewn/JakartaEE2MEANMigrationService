@@ -1,4 +1,4 @@
-package com.migration.service.service.migration;
+package com.migration.service.service.architectureGeneration;
 
 import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowledge;
 import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowledgeService;

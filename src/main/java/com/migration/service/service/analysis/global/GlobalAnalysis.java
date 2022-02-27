@@ -2,6 +2,8 @@ package com.migration.service.service.analysis.global;
 
 import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowledge;
 import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowledgeService;
+import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledge;
+import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledgeService;
 import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledge;
 import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledgeService;
 import com.migration.service.model.analysisKnowledge.semanticKnowledge.SemanticKnowledge;
@@ -17,6 +19,7 @@ public class GlobalAnalysis {
 	private final SemanticKnowledgeService semanticKnowledgeService;
 	private final NodeKnowledgeService nodeKnowledgeService;
 	private final OntologyKnowledgeService ontologyKnowledgeService;
+	private final ModuleKnowledgeService moduleKnowledgeService;
 	//private List<Pair<String, Value>> triangleCountResults;
 
 	private String pageRankQuery = "CALL algo.pageRank.stream(null, null, " +
@@ -36,19 +39,66 @@ public class GlobalAnalysis {
 	private String triangleCoefficientQuery = "CALL algo.triangleCount.stream(null, null, {concurrency:8}) " +
 			"YIELD nodeId, coefficient " +
 			"return algo.getNodeById(nodeId).name as name, coefficient as score";
+	private String louvainQuery = "CALL algo.louvain.stream('JavaImplementation', null, {})" +
+			" YIELD nodeId, community" +
+			" RETURN algo.getNodeById(nodeId).name as name, community" +
+			" ORDER BY community DESC";
 
 	private final Driver driver;
 	public GlobalAnalysis(Driver driver, SemanticKnowledgeService semanticKnowledgeService,
-						  NodeKnowledgeService nodeKnowledgeService, OntologyKnowledgeService ontologyKnowledgeService) {
+						  NodeKnowledgeService nodeKnowledgeService, OntologyKnowledgeService ontologyKnowledgeService,
+						  ModuleKnowledgeService moduleKnowledgeService) {
 		this.driver = driver;
 		this.semanticKnowledgeService = semanticKnowledgeService;
 		this.nodeKnowledgeService = nodeKnowledgeService;
 		this.ontologyKnowledgeService = ontologyKnowledgeService;
+		this.moduleKnowledgeService = moduleKnowledgeService;
 		this.setUp();
 	}
 
 	public void setUp(){
 		//ontologyKnowledgeService.setUp();
+	}
+
+	public List<ModuleKnowledge> calculateLouvainClusters(){
+		List<ModuleKnowledge> louvainModules = new ArrayList<>();
+		int currentClusterNumber = -1;
+		String currentBase = "";
+		List<String> moduleCluster = new ArrayList<>();
+		try(Session session = driver.session()){
+			boolean beginningOfList = true;
+			for(Record r : session.run(louvainQuery).list()){
+				int community = r.get(1).asInt();
+				String name = r.get(0).asString();
+				if(beginningOfList) {
+					currentClusterNumber = community;
+					beginningOfList = false;
+				}
+				if(community==currentClusterNumber){
+					moduleCluster.add(name);
+					currentBase = "" + community;
+				}
+				else {
+					currentClusterNumber = community;
+					ModuleKnowledge moduleKnowledge = new ModuleKnowledge();
+					moduleKnowledge.setSplittingStrategy("Louvain");
+					moduleKnowledge.setBase(currentBase);
+					moduleKnowledge.setModuleCluster(moduleCluster);
+					louvainModules.add(moduleKnowledge);
+					moduleCluster = new ArrayList<>();
+					currentBase = "" + community;
+					moduleCluster.add(name);
+				}
+				//System.out.println(r.get(0).asString());
+				//System.out.println(r.get(1).asInt());
+			}
+			ModuleKnowledge moduleKnowledge = new ModuleKnowledge();
+			moduleKnowledge.setSplittingStrategy("Louvain");
+			moduleKnowledge.setBase(currentBase);
+			moduleKnowledge.setModuleCluster(moduleCluster);
+			louvainModules.add(moduleKnowledge);
+		}
+		return louvainModules;
 	}
 
 	public List<NodeKnowledge> calculateInterpretation(List<NodeKnowledge> nodeKnowledgeList){

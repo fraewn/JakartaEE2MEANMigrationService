@@ -1,4 +1,4 @@
-package com.migration.service.service.analysis.local.splittingStrategies.splittingByFunctionality;
+package com.migration.service.service.analysis.splittingStrategies.splittingByFunctionality;
 
 import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowledge;
 import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowledgeService;

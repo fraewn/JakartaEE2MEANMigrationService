@@ -1,6 +1,6 @@
 package com.migration.service.controller;
 
-import com.migration.service.service.analysis.local.splittingStrategies.splittingByFunctionality.FunctionalitySplitting;
+import com.migration.service.service.analysis.splittingStrategies.splittingByFunctionality.FunctionalitySplitting;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledge;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledgeService;
 import lombok.AllArgsConstructor;

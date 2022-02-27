@@ -1,6 +1,6 @@
 package com.migration.service.service.analysis.semanticAnalysis;
 
-import com.migration.service.service.analysis.local.splittingStrategies.splittingByEntity.EntitySplitting;
+import com.migration.service.service.analysis.splittingStrategies.splittingByEntity.EntitySplitting;
 import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledgeService;
 import com.migration.service.model.analysisKnowledge.semanticKnowledge.SemanticKnowledge;
 import org.neo4j.driver.*;

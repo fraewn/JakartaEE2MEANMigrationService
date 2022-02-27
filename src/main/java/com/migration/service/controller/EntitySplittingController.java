@@ -1,5 +1,5 @@
 package com.migration.service.controller;
-import com.migration.service.service.analysis.local.splittingStrategies.splittingByEntity.EntitySplitting;
+import com.migration.service.service.analysis.splittingStrategies.splittingByEntity.EntitySplitting;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledge;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledgeService;
 import com.migration.service.model.analysisKnowledge.localKnowledge.splittingStrategies.entitySplitting.EntitySplittingProfile;

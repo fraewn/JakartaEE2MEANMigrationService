@@ -41,12 +41,19 @@ public class ModuleKnowledgeService {
 		moduleKnowledgeRepository.deleteAll(moduleKnowledgeRepository.findModuleKnowledgeBySplittingStrategy("Entity Based Splitting Strategy"));
 	}
 
+	public void deleteLouvainBasedModules(){
+		moduleKnowledgeRepository.deleteAll(this.findAllLouvainBasedModules());
+	}
+
 	public List<ModuleKnowledge> findAllEntityBasedModules(){
 		return moduleKnowledgeRepository.findModuleKnowledgeBySplittingStrategy("Entity Based Splitting Strategy");
 	}
 
 	public List<ModuleKnowledge> findAllFunctionalityBasedModules(){
 		return moduleKnowledgeRepository.findModuleKnowledgeBySplittingStrategy("Functionality Based Splitting Strategy");
+	}
+	public List<ModuleKnowledge> findAllLouvainBasedModules(){
+		return moduleKnowledgeRepository.findModuleKnowledgeBySplittingStrategy("Louvain");
 	}
 	public List<ModuleKnowledge> findModuleKnowledgeByStrategy(String strategy){
 		return moduleKnowledgeRepository.findModuleKnowledgeBySplittingStrategy(strategy);

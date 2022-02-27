@@ -3,7 +3,7 @@ package com.migration.service.controller;
 
 import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledgeService;
 import com.migration.service.service.codeGeneration.GenerateCode;
-import com.migration.service.service.migration.CreateMEANArchitectureGraph;
+import com.migration.service.service.architectureGeneration.CreateMEANArchitectureGraph;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledge;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledgeService;
 import com.migration.service.service.JavaEEGraphService;

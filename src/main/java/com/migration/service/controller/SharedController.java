@@ -1,5 +1,7 @@
 package com.migration.service.controller;
 
+import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledge;
+import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledgeService;
 import com.migration.service.service.analysis.global.GlobalAnalysis;
 import com.migration.service.service.analysis.semanticAnalysis.SemanticAnalysis;
 import com.migration.service.service.analysis.semanticAnalysis.SemanticAnalysisExtension;
@@ -19,12 +21,13 @@ import java.util.List;
 @RestController
 @RequestMapping("api/v1/tasks")
 @AllArgsConstructor
-public class TaskController {
+public class SharedController {
 	private final SemanticKnowledgeService semanticKnowledgeService;
 	private final SemanticAnalysis semanticAnalysis;
 	private final GlobalAnalysis globalAnalysis;
 	private final NodeKnowledgeService nodeKnowledgeService;
 	private final OntologyKnowledgeService ontologyKnowledgeService;
+	private final ModuleKnowledgeService moduleKnowledgeService;
 
 	// only for testing
 	@GetMapping("/semanticKnowledge/show")
@@ -175,13 +178,20 @@ public class TaskController {
 		return new ResponseEntity<List<OntologyKnowledge>>(ontologyKnowledge, HttpStatus.OK);
 	}
 
-
-
-
 	@GetMapping("/test")
 	public ResponseEntity<List<String>> semanticAnalysisMoveKeyword(@RequestParam String nodeName){
 		List<String> funcs = globalAnalysis.getFunctionalitiesForANode(nodeName);
 		return new ResponseEntity<List<String>>(funcs, HttpStatus.OK);
+	}
+
+
+	@CrossOrigin(origins = "http://localhost:4200")
+	@GetMapping("/globalAnalyses/louvain")
+	public ResponseEntity<List<ModuleKnowledge>> callLouvain(){
+		List<ModuleKnowledge> moduleKnowledges = globalAnalysis.calculateLouvainClusters();
+		moduleKnowledgeService.deleteLouvainBasedModules();
+		moduleKnowledgeService.insertAll(moduleKnowledges);
+		return new ResponseEntity<List<ModuleKnowledge>>(moduleKnowledgeService.findAllLouvainBasedModules(), HttpStatus.OK);
 	}
 
 
