@@ -31,13 +31,14 @@ public class MEANArchitectureGraphController {
 		return new ResponseEntity<List<Node>>(javaEEGraphService.getNodeByName(name), HttpStatus.OK);
 	}
 
-	//@CrossOrigin(origins = "http://localhost:4200")
+	@CrossOrigin(origins = "http://localhost:4200")
 	@GetMapping("/create")
 	public ResponseEntity<List<ModuleKnowledge>> requestCreateGraphCreation(){
 		createMEANArchitectureGraph.createArchitecture();
 		return new ResponseEntity<List<ModuleKnowledge>>(moduleKnowledgeService.findAllFunctionalityBasedModules(), HttpStatus.OK);
 	}
 
+	@CrossOrigin(origins = "http://localhost:4200")
 	@GetMapping("/getNode")
 	public ResponseEntity<List<ModuleKnowledge>> requestNode(){
 		String name = "Report.java";

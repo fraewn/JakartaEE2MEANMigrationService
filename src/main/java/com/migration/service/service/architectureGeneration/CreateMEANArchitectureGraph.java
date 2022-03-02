@@ -330,14 +330,22 @@ public class CreateMEANArchitectureGraph {
 
 	public void matchEntitiesToModules(){
 		for(ModuleKnowledge moduleKnowledge : this.frontendEntityProcessingModuleKnowledge) {
-			// match the entity that is processed by the module
-			for (String usedModule : moduleKnowledge.getUsedModules()) {
-				// find entity that is processed
-				for (String model : this.findModelByModuleInGraph(usedModule)) {
-					for (EntityModel entityModel : this.entityModels) {
-						if (this.removeJsFromClassName(model).equals(this.removeJavaFromClassNameAndChangeToLowerCase(entityModel.getName()))) {
-							entitiesComponentsDic.put(moduleKnowledge, entityModel);
-							break;
+			// each frontend entity processing module should have one backend entity processing module associated, so this should not
+			// happen
+			// TODO check that before starting the process so the knowledge can change that and does not only find out after half the
+			//  process is completed
+			System.out.println(moduleKnowledge.getBase());
+			if(moduleKnowledge.getUsedModules()!=null) {
+				System.out.println(moduleKnowledge.getBase());
+				// match the entity that is processed by the module
+				for (String usedModule : moduleKnowledge.getUsedModules()) {
+					// find entity that is processed
+					for (String model : this.findModelByModuleInGraph(usedModule)) {
+						for (EntityModel entityModel : this.entityModels) {
+							if (this.removeJsFromClassName(model).equals(this.removeJavaFromClassNameAndChangeToLowerCase(entityModel.getName()))) {
+								entitiesComponentsDic.put(moduleKnowledge, entityModel);
+								break;
+							}
 						}
 					}
 				}
@@ -740,7 +748,9 @@ public class CreateMEANArchitectureGraph {
 		String meanLocation = "Backend";
 		int entityCount = 0;
 		int modelCount =0;
+		int restModelCount=0;
 		int routeCount=0;
+		int restRouteCount=0;
 		int soapApiCount = 0;
 
 		String transactionFeature="Transaction Feature";
@@ -764,6 +774,22 @@ public class CreateMEANArchitectureGraph {
 									"', location: '" + meanLocation + "', package: 'soap/route', name: '" + ontologyKnowledgeService.findByJavaEEComponent(soapAPIJavaEEComponent).getDefaultLibrary() + "'})";
 				}
 				soapApiCount++;
+				// automatically add rest route to soap route
+				String restInterpretation="Service";
+				String associatedRESTMEANComponent =
+						ontologyKnowledgeService.findByJavaEEComponent(restInterpretation).getMEANComponent();
+				query =
+						query + " MERGE (k" + restRouteCount + ":" + associatedRESTMEANComponent + " {id:'" + moduleName +
+								"', module:" +
+								" '" + moduleKnowledge.getBase() + "', location: '" + meanLocation + "', package: " +
+								"'routes'})";
+
+				if (!(routeCount > 0)) {
+					query =
+							query + " MERGE (g:Functionality" + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() +
+									"', location: '" + meanLocation + "', package: 'routes', name: '" + ontologyKnowledgeService.findByJavaEEComponent(restInterpretation).getDefaultLibrary() + "'})";
+				}
+				restRouteCount++;
 			}
 			// soap controller
 			else if(nodeKnowledge.getCalculatedInterpretation().contains(wsdlEndpointJavaEEComponent)){
@@ -772,6 +798,14 @@ public class CreateMEANArchitectureGraph {
 				query =
 						query + " MERGE (w:" + associatedMEANComponent + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() + "', location: '" + meanLocation + "', package: " +
 								"'soap/controller'})";
+				// automatically add rest controller to soap controller
+				String restInterpretation="Data Access Object";
+				String associatedRESTMEANComponent =
+						ontologyKnowledgeService.findByJavaEEComponent(restInterpretation).getMEANComponent();
+				query =
+						query + " MERGE (m" + restModelCount + ":" + associatedRESTMEANComponent + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() + "', location: '" + meanLocation + "', package: " +
+								"'controller'})";
+				restModelCount++;
 			}
 			else {
 				for (String interpretation : nodeKnowledge.getCalculatedInterpretation()) {
