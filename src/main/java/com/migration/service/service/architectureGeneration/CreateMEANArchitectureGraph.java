@@ -162,9 +162,10 @@ public class CreateMEANArchitectureGraph {
 	public void processBackendEntityProcessingAssociations(){
 		for (Map.Entry<String, List<String>> entry : this.backendEntityProcessingModuleAssociations.entrySet()) {
 			for(String connectedController : entry.getValue()){
-				String restControllerId = this.findRestControllerByBaseInGraph(connectedController).get(0);
+				//String restControllerId = this.findRestControllerByBaseInGraph(connectedController).get(0);
+				String modelId = this.findModelByModuleInGraph(connectedController).get(0);
 				String connectControllerQuery = "Match(n:RestController) where n.id='" + entry.getKey() + "' Match" +
-						"(m:RestController) where m.id='"+ restControllerId + "' MERGE(n)-[:USES]-(m)";
+						"(m:Model) where m.id='"+ modelId + "' MERGE(n)-[:USES]-(m)";
 				this.runQueryOnMEANGraph(connectControllerQuery);
 			}
 		}
@@ -334,9 +335,7 @@ public class CreateMEANArchitectureGraph {
 			// happen
 			// TODO check that before starting the process so the knowledge can change that and does not only find out after half the
 			//  process is completed
-			System.out.println(moduleKnowledge.getBase());
 			if(moduleKnowledge.getUsedModules()!=null) {
-				System.out.println(moduleKnowledge.getBase());
 				// match the entity that is processed by the module
 				for (String usedModule : moduleKnowledge.getUsedModules()) {
 					// find entity that is processed
@@ -355,13 +354,22 @@ public class CreateMEANArchitectureGraph {
 
 	public List<String> findBackendEndpointOfModel(String entity){
 		String query = "match(n:Route)-[]-(m:RestController)-[]-(k:Model) where k.id='" + entity + ".js'" + " return n";
-		String queryWithMiddleware = "match(n:Route)-[]-(a:Middleware)-[]-(m:RestController)-[]-(k:Model) where k.id='" + entity +
-				".js'" + " return n";
+		//String queryWithMiddleware = "match(n:Route)-[]-(a:Middleware)-[]-(m:RestController)-[]-(k:Model) where k.id='" + entity +
+				//".js'" + " return n";
 		Driver driver = setUpNeo4jDriver("MEAN");
 		try(Session session = setUpNeo4jSession(driver)) {
-			return session.run(query).list(result -> result.get("n").asNode().get("id").asString()).size() == 0 ?
+			return session.run(query).list(result -> result.get("n").asNode().get("id").asString()) //.size()
+					/*== 0 ?
 					session.run(queryWithMiddleware).list(result -> result.get("n").asNode().get("id").asString()) :
-					session.run(query).list(result -> result.get("n").asNode().get("id").asString());
+					session.run(query).list(result -> result.get("n").asNode().get("id").asString())*/;
+		}
+	}
+
+	public String findModuleOfModel(String entity){
+		String query = "match(k:Model) where k.id='" + entity + ".js'" + " return k";
+		Driver driver = setUpNeo4jDriver("MEAN");
+		try(Session session = setUpNeo4jSession(driver)) {
+			return session.run(query).list(result -> result.get("k").asNode().get("module").asString()).get(0);
 		}
 	}
 
@@ -393,10 +401,17 @@ public class CreateMEANArchitectureGraph {
 				this.runQueryOnMEANGraph(subjectQuery);
 				entitiesAlreadyUsed.add(entity);
 				if(this.findBackendEndpointOfModel(this.removeJavaFromClassName(entitiesComponentsDic.get(moduleKnowledge).getName())).size()>0) {
-					String connectServiceToEndpointQuery =
-							"Match(s:Service) where s.id='" + serviceName + "' Match(n:Route) where n.id='"
-									+ this.findBackendEndpointOfModel(this.removeJavaFromClassName(entitiesComponentsDic.get(moduleKnowledge).getName())).get(0) + "' MERGE(s)-[:REST_CALL]-(n)";
-					this.runQueryOnMEANGraph(connectServiceToEndpointQuery);
+					String entityName = this.removeJavaFromClassName(entitiesComponentsDic.get(moduleKnowledge).getName());
+					List<String> possibleBackendEndpoints =
+							this.findBackendEndpointOfModel(entityName);
+					String module = this.findModuleOfModel(entityName);
+					for(String endpoint : possibleBackendEndpoints){
+						String connectServiceToEndpointQuery =
+								"Match(s:Service) where s.id='" + serviceName + "' Match(n:Route) where n.id='"
+										+ endpoint
+										+ "' and n.module='" + module + "' MERGE(s)-[:REST_CALL]-(n)";
+						this.runQueryOnMEANGraph(connectServiceToEndpointQuery);
+					}
 				}
 			}
 			// create components for the module
@@ -610,15 +625,15 @@ public class CreateMEANArchitectureGraph {
 				"' MERGE " +
 				"(n)" +
 				"-[:FORWARDS_REQUEST]-(m)";
-		String deleteQuery = "Match(n:Route) where n.module='" + usingModuleKnowledge.getBase() + "' MATCH(m:RestController) where m" +
+		/*String deleteQuery = "Match(n:Route) where n.module='" + usingModuleKnowledge.getBase() + "' MATCH(m:RestController) where m" +
 				".module='" + usingModuleKnowledge.getBase() + "' MATCH(n)-[r]-(m) delete r";
 		String reMergeQuery =
 				"Match(n:Middleware) where n.module='" + authFeatureModuleKnowledge.getBase() + "' MATCH(m:RestController) where m" +
 						".module='" + usingModuleKnowledge.getBase() +
-				"' MERGE (n)-[:FORWARDS_REQUEST]-(m)";
+				"' MERGE (n)-[:FORWARDS_REQUEST]-(m)";*/
 		this.runQueryOnMEANGraph(mergeQuery);
-		this.runQueryOnMEANGraph(deleteQuery);
-		this.runQueryOnMEANGraph(reMergeQuery);
+		// this.runQueryOnMEANGraph(deleteQuery);
+		// this.runQueryOnMEANGraph(reMergeQuery);
 	}
 
 	public void addEmailFeatureToBackendModel(ModuleKnowledge mailFeatureModuleKnowledge){
