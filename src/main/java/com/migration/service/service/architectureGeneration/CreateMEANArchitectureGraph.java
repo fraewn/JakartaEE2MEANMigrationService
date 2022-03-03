@@ -452,14 +452,10 @@ public class CreateMEANArchitectureGraph {
 					} else if (interpretation.equals("Authentication Management")) {
 						if(authModuleAlreadyCreated==false) {
 							// create Auth Module
-							String authServiceQuery = "Merge(n:Service {id:'auth.service.ts', module: 'auth', package:'auth', " +
+							/*String authServiceQuery = "Merge(n:Service {id:'auth.service.ts', module: 'auth', package:'auth', " +
 									"location:'Frontend'})";
-							String authGuardQuery =
-									"Merge(n:" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent()
-											+ " {id:'auth.guard.ts', module: 'auth', package:'auth', location:'Frontend'})";
-							String authGuardFunctionalityQuery =
-									"Merge(n:Functionality {name:'" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getDefaultLibrary() + "', " +
-											"module: 'auth', package:'auth', location:'Frontend'})";
+
+
 							//String authModuleQuery =
 									//"MERGE(n:Module {id:'auth.module.ts', module:'auth', package: 'auth', location" +
 									//		":'Frontend'})";
@@ -469,9 +465,9 @@ public class CreateMEANArchitectureGraph {
 							String authSubjectQuery =
 									"MERGE(n:Subject {id:'authSubject', module:'auth', package: 'auth', location" +
 											":'Frontend'})";
-							this.runQueryOnMEANGraph(authGuardQuery);
+
 							this.runQueryOnMEANGraph(authServiceQuery);
-							this.runQueryOnMEANGraph(authGuardFunctionalityQuery);
+
 							// auth module is not necessary since login/logout belong to user module
 							//this.runQueryOnMEANGraph(authModuleQuery);
 							this.runQueryOnMEANGraph(authInterfaceQuery);
@@ -479,24 +475,34 @@ public class CreateMEANArchitectureGraph {
 							// add relations
 							String mergeAuthServiceWithModel = "match(n:Service) where n.module='auth' match(m:Interface) where " +
 									"m.module='auth' merge(n)-[:USES]-(m)";
-							String mergeAuthGuardAndFunc =
-									"match(n:" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent() + ") " +
-											"where n.module='auth' match(m:Functionality) where m.module='auth' merge(n)-[:IMPORTS]-(m)";
+
 							String mergeAuthServiceWithSubject = "match(n:Service) where n.module='auth' match(m:Subject) where " +
 									"m.module='auth' merge(n)-[:CREATES]-(m)";
 							this.runQueryOnMEANGraph(mergeAuthServiceWithModel);
+							this.runQueryOnMEANGraph(mergeAuthServiceWithSubject);*/
+
+							String authGuardQuery =
+									"Merge(n:" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent()
+											+ " {id:'auth.guard.ts', module: 'auth', package:'auth', location:'Frontend'})";
+							this.runQueryOnMEANGraph(authGuardQuery);
+							String authGuardFunctionalityQuery =
+									"Merge(n:Functionality {name:'" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getDefaultLibrary() + "', " +
+											"module: 'auth', package:'auth', location:'Frontend'})";
+							this.runQueryOnMEANGraph(authGuardFunctionalityQuery);
+							String mergeAuthGuardAndFunc =
+									"match(n:" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent() + ") " +
+											"where n.module='auth' match(m:Functionality) where m.module='auth' merge(n)-[:IMPORTS]-(m)";
 							this.runQueryOnMEANGraph(mergeAuthGuardAndFunc);
-							this.runQueryOnMEANGraph(mergeAuthServiceWithSubject);
 							authModuleAlreadyCreated = true;
 						}
 						this.runQueryOnMEANGraph("Match(n:Service) where n.module='" + moduleName + "' Match(m:" + ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent() + ") " +
 								"MERGE (m)-[:INJECTS]-(n)");
-						this.runQueryOnMEANGraph("Match(n:Component) where n.module='" + moduleName + "' Match(m:Service) where m" +
+						/*this.runQueryOnMEANGraph("Match(n:Component) where n.module='" + moduleName + "' Match(m:Service) where m" +
 								".module='auth' MERGE (n)-[:USES]-(m)");
 						this.runQueryOnMEANGraph("Match(n:Component) where n.module='" + moduleName + "' Match(m:Subject) where m" +
 								".module='auth' MERGE (n)-[:SUBSCRIBES_TO]-(m)");
 						this.runQueryOnMEANGraph("Match(n:Component) where n.module='" + moduleName + "' Match(m:Interface) where m" +
-								".module='auth' MERGE (n)-[:USES]-(m)");
+								".module='auth' MERGE (n)-[:USES]-(m)");*/
 					}
 				}
 			}
