@@ -109,7 +109,7 @@ public class OntologyKnowledgeService {
 			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.crypto","Encryption",
 					"Encrypt data", "", "Backend", "middleware", true, "bicrypt"));
 			ontologyKnowledge.add(new OntologyKnowledge("Persistence Layer", "javax.transaction","Transaction Feature",
-					"Transactional data operations", "", "Backend", "ControllerMethod", true, "mongoose transactions"));
+					"Transactional data operations", "", "Backend", "ControllerMethod", false, ""));
 			ontologyKnowledge.add(new OntologyKnowledge("Service Layer", "javax.security","Authentication Feature",
 					"Authentication" +
 					" mechanisms", "", "Backend", "Middleware", true, "jwt"));

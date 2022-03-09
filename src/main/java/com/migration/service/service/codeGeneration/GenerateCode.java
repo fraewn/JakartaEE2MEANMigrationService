@@ -2,12 +2,10 @@ package com.migration.service.service.codeGeneration;
 
 import com.migration.service.model.analysisKnowledge.globalKnowledge.NodeKnowledgeService;
 import com.migration.service.model.analysisKnowledge.localKnowledge.modules.ModuleKnowledgeService;
-import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledge;
 import com.migration.service.model.analysisKnowledge.ontologyKnowledge.OntologyKnowledgeService;
 import com.migration.service.model.migrationKnowledge.entityMigration.EntityModel;
 import com.migration.service.model.migrationKnowledge.entityMigration.EntityModelService;
 import com.migration.service.service.util.EnvironmentUtils;
-import com.mongodb.client.MongoCollection;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
@@ -60,18 +58,18 @@ public class GenerateCode {
 	}
 
 	public List<String> getFunctionalitiesAssociatedWithRestController(String id){
-		String query = "MATCH(m:RestController)-[]-(f:Functionality) where m.id='" + id + "' return f";
+		String query = "MATCH(m:RestController)-[]-(f:Functionality) where m.id='" + id + "' return m";
 		Driver driver = setUpNeo4jDriver("MEAN");
 		try(Session session = setUpNeo4jSession(driver)) {
-			return session.run(query).list(result -> result.get("f").asNode().get("name").asString());
+			return session.run(query).list(result -> result.get("m").asNode().get("name").asString());
 		}
 	}
 
-	public List<String> getOtherRestControllersAssociatedWithRestController(String id){
-		String query = "MATCH(m:RestController)-[]-(f:RestController) where m.id='" + id + "' return f";
+	public List<String> getOtherModelsAssociatedWithRestController(String id, String module){
+		String query = "MATCH(n:RestController)-[]-(m:Model) where n.id='" + id + "' and  m.module<>'" + module + "' return m";
 		Driver driver = setUpNeo4jDriver("MEAN");
 		try(Session session = setUpNeo4jSession(driver)) {
-			return session.run(query).list(result -> result.get("f").asNode().get("id").asString());
+			return session.run(query).list(result -> result.get("m").asNode().get("id").asString());
 		}
 	}
 
@@ -91,7 +89,7 @@ public class GenerateCode {
 	}
 
 	public List<String> getModelByController(String id){
-		String query = "match(rc:RestController)-[]-(m:Model) where rc.id='" + id + "' " +
+		String query = "match(rc:RestController)-[]-(m:Model) where rc.id='" + id + "' and rc.module=m.module " +
 				"return m";
 		Driver driver = setUpNeo4jDriver("MEAN");
 		try(Session session = setUpNeo4jSession(driver)) {
@@ -103,10 +101,20 @@ public class GenerateCode {
 		List<Node> controllerNodes = this.getAllRestControllers();
 		for(Node node : controllerNodes){
 			String filename = node.get("id").asString();
+			String module = node.get("module").asString();
+			boolean transaction = this.checkForTransaction(filename);
 			String packageName = "\\" + node.get("package").asString() + "\\";
 			System.out.println("/*++++++ Code generation for file: " + filename + " at location: " + this.path + packageName + " " +
 					"+++++*/\n");
-			this.generateRestControllerCode(filename);
+			this.generateRestControllerCode(filename, transaction, module);
+		}
+	}
+
+	public boolean checkForTransaction(String id){
+		String query = "match(n:RestController)-[r]-(m:Model) where n.id='" + id + "' return count(r)";
+		Driver driver = setUpNeo4jDriver("MEAN");
+		try(Session session = setUpNeo4jSession(driver)) {
+			return session.run(query).list(result -> result.get("count(r)").asInt()).get(0)==2 ? true : false;
 		}
 	}
 
@@ -114,20 +122,20 @@ public class GenerateCode {
 		return name.replace(".component.ts","");
 	}
 
-	public void generateRestControllerCode(String filename){
+	public void generateRestControllerCode(String filename, boolean transaction, String module){
 		List<String> functionalities = this.getFunctionalitiesAssociatedWithRestController(filename);
-		List<String> otherAssociatedRestControllers = this.getOtherRestControllersAssociatedWithRestController(filename);
+		List<String> otherAssociatedModels = this.getOtherModelsAssociatedWithRestController(filename, module);
 		List<String> neededMethodsForComponent = this.getComponentsAssociatedWithServiceThatUsesRoute(filename);
 		String importedFunctionalities = "";
 		for(String func : functionalities){
 			importedFunctionalities = importedFunctionalities + "const " + func.replace(" ", "") + " = require('" + func + "');\n";
 		}
-		String otherControllerImport = "";
+		String otherModelImport = "";
 		importedFunctionalities = importedFunctionalities + "\n";
-		for(String controller : otherAssociatedRestControllers){
-			String model = this.getModelByController(controller).get(0).replace(".js", "");
-			otherControllerImport =
-					otherControllerImport + "const " + model + " = require('../" + this.modelPackage + "/" + model.toLowerCase() + "');" +
+		for(String model : otherAssociatedModels){
+			//String model = this.getModelByController(controller).get(0).;
+			otherModelImport =
+					otherModelImport + "const " + model.replace(".js", "") + " = require('../" + this.modelPackage + "/" + model.toLowerCase() + "');" +
 							"\n";
 		}
 		String model = this.getModelByController(filename).get(0).replace(".js", "");
@@ -140,10 +148,10 @@ public class GenerateCode {
 		}
 		// if transaction func -> dann bitte ein Todo mit mach transaction bitte entwickler
 		String todo="";
-		if(functionalities.contains("mongoose transactions")){
+		if(transaction){
 			todo = "// TODO implement transactional logic \n\n";
 		}
-		String code = importedFunctionalities +  otherControllerImport + ownControllerImport + todo + methods;
+		String code = importedFunctionalities +  otherModelImport + ownControllerImport + todo + methods;
 
 		System.out.println(code);
 	}

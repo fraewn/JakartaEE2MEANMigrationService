@@ -774,7 +774,6 @@ public class CreateMEANArchitectureGraph {
 		int restRouteCount=0;
 		int soapApiCount = 0;
 
-		String transactionFeature="Transaction Feature";
 		String soapAPIJavaEEComponent="SOAP API";
 		String wsdlEndpointJavaEEComponent="WSDL Endpoint";
 		for(String component : moduleKnowledge.getModuleCluster()){
@@ -830,12 +829,6 @@ public class CreateMEANArchitectureGraph {
 			}
 			else {
 				for (String interpretation : nodeKnowledge.getCalculatedInterpretation()) {
-					if(interpretation.equals(transactionFeature)){
-						query =
-								query + " MERGE (trans:Functionality" + " {id:'" + moduleName + "', module: '" + moduleKnowledge.getBase() +
-										"', location: '" + meanLocation + "', name: '" + ontologyKnowledgeService.findByJavaEEComponent(transactionFeature).getDefaultLibrary() + "'})";
-					}
-
 					if (interpretation.equals("Entity Implementation")) {
 						String associatedMEANComponent =
 								ontologyKnowledgeService.findByJavaEEComponent(interpretation).getMEANComponent();
@@ -1098,8 +1091,8 @@ public class CreateMEANArchitectureGraph {
 				"' MERGE(n)-[:FORWARDS_REQUEST]->(m)");
 		queries.add("MATCH (n:Class) where n.module='" + module + "' MATCH (m:Functionality) where m.module='" + module  +
 				"' MERGE(n)-[:USES]->(m)");
-		queries.add("MATCH (n:RestController) where n.module='" + module + "' MATCH (m:Functionality) where m.module='" + module  + "' " +
-				"AND m.name='mongoose transactions' MERGE(n)-[:IMPORTS]->(m)");
+		//queries.add("MATCH (n:RestController) where n.module='" + module + "' MATCH (m:Functionality) where m.module='" + module  + "' " +
+				//"AND m.name='mongoose transactions' MERGE(n)-[:IMPORTS]->(m)");
 		queries.add("MATCH (n:External) where n.location='Backend' MATCH (m:App) where m.location='Backend' MERGE(n)-[:ASSOCIATED_WITH]->" +
 				"(m)");
 		//... execute
