@@ -192,7 +192,8 @@ public class GenerateCode {
 		HashMap<String, String> attributeTypes = new HashMap<>();
 		String entityName = "";
 		for(EntityModel entityModel : entityModels){
-			if(this.transformJavaFilenameToPureEntity(entityModel.getName()).equals(this.transformJSFilenameToPureEntity(filename))){
+			if(this.transformJavaFilenameToPureEntity(entityModel.getName())
+					.equals(this.transformJSFilenameToPureEntity(filename))){
 				attributeTypes = entityModel.getAttributeTypes();
 				entityName = entityModel.getName();
 			}
@@ -202,12 +203,16 @@ public class GenerateCode {
 				".Schema({\n";
 		String attributeDefintion = "";
 		for (Map.Entry<String, String> entry : attributeTypes.entrySet()) {
-			attributeDefintion = attributeDefintion + entry.getKey() + ": {type: " + entry.getValue() + ", required: true},\n";
+			attributeDefintion = attributeDefintion + entry.getKey()
+					+ ": {type: " + entry.getValue() + ", required: true},\n";
 		}
 		// cut off last comma
-		attributeDefintion = attributeDefintion.substring(0, attributeDefintion.length()-2) + "\n});\n\n";
+		attributeDefintion = attributeDefintion.substring(0, attributeDefintion.length()-2)
+				                 + "\n});\n\n";
 		String moduleExport =
-				"module.exports = " + functionality + ".model('" + entityName.replace(".java", "") + "', " + this.transformJSFilenameToPureEntity(filename) + "Schema)";
+				"module.exports = " + functionality + ".model('"
+						+ entityName.replace(".java", "")
+						+ "', " + this.transformJSFilenameToPureEntity(filename) + "Schema)";
 		String code = functionalityImport + schemaDefintion + attributeDefintion + moduleExport;
 		System.out.println(code+"\n\n\n");
 	}

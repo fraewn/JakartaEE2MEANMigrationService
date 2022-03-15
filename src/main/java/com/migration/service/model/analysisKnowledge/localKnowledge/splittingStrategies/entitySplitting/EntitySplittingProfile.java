@@ -10,10 +10,10 @@ public class EntitySplittingProfile {
 	@Id
 	String id;
 	int searchDepth;
-	List<String> filteredJavaEEComponents;
-	List<String> allowedJavaEEComponents;
-	String centralJavaEEComponent;
-	String substitutionalCentralJavaEEComponent;
+	List<String> filteredJakartaEEComponents;
+	List<String> allowedJakartaEEComponents;
+	String centralJakartaEEComponent;
+	String substitutionalCentralJakartaEEComponent;
 
 	public int getSearchDepth() {
 		return searchDepth;
@@ -23,35 +23,35 @@ public class EntitySplittingProfile {
 		this.searchDepth = searchDepth;
 	}
 
-	public List<String> getFilteredJavaEEComponents() {
-		return filteredJavaEEComponents;
+	public List<String> getFilteredJakartaEEComponents() {
+		return filteredJakartaEEComponents;
 	}
 
-	public void setFilteredJavaEEComponents(List<String> filteredJavaEEComponents) {
-		this.filteredJavaEEComponents = filteredJavaEEComponents;
+	public void setFilteredJakartaEEComponents(List<String> filteredJakartaEEComponents) {
+		this.filteredJakartaEEComponents = filteredJakartaEEComponents;
 	}
 
-	public List<String> getAllowedJavaEEComponents() {
-		return allowedJavaEEComponents;
+	public List<String> getAllowedJakartaEEComponents() {
+		return allowedJakartaEEComponents;
 	}
 
-	public void setAllowedJavaEEComponents(List<String> allowedJavaEEComponents) {
-		this.allowedJavaEEComponents = allowedJavaEEComponents;
+	public void setAllowedJakartaEEComponents(List<String> allowedJakartaEEComponents) {
+		this.allowedJakartaEEComponents = allowedJakartaEEComponents;
 	}
 
-	public String getCentralJavaEEComponent() {
-		return centralJavaEEComponent;
+	public String getCentralJakartaEEComponent() {
+		return centralJakartaEEComponent;
 	}
 
-	public void setCentralJavaEEComponent(String centralJavaEEComponent) {
-		this.centralJavaEEComponent = centralJavaEEComponent;
+	public void setCentralJakartaEEComponent(String centralJakartaEEComponent) {
+		this.centralJakartaEEComponent = centralJakartaEEComponent;
 	}
 
-	public String getSubstitutionalCentralJavaEEComponent() {
-		return substitutionalCentralJavaEEComponent;
+	public String getSubstitutionalCentralJakartaEEComponent() {
+		return substitutionalCentralJakartaEEComponent;
 	}
 
-	public void setSubstitutionalCentralJavaEEComponent(String substitutionalCentralJavaEEComponent) {
-		this.substitutionalCentralJavaEEComponent = substitutionalCentralJavaEEComponent;
+	public void setSubstitutionalCentralJakartaEEComponent(String substitutionalCentralJakartaEEComponent) {
+		this.substitutionalCentralJakartaEEComponent = substitutionalCentralJakartaEEComponent;
 	}
 }

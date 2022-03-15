@@ -33,8 +33,8 @@ public class EntitySplitting {
 		List<ModuleKnowledge> moduleKnowledges = new ArrayList<>();
 		this.entitySplittingProfile = entitySplittingProfileService.findAll().get(0);
 		for(String entity : this.getEntities()){
-			String centralJavaEEComponent = this.findCentralJavaEEComponentInEntityNeighbours(this.getEntityNeighbours(entity));
-			List<String> centralComponentNeighbours = this.getCentralJavaEEComponentNeighbours(centralJavaEEComponent);
+			String centralJavaEEComponent = this.findCentralJakartaEEComponentInEntityNeighbours(this.getEntityNeighbours(entity));
+			List<String> centralComponentNeighbours = this.getCentralJakartaEEComponentNeighbours(centralJavaEEComponent);
 			centralComponentNeighbours.add(centralJavaEEComponent);
 			List<String> filteredModule = this.filter(centralComponentNeighbours);
 			ModuleKnowledge moduleKnowledge = new ModuleKnowledge();
@@ -47,7 +47,7 @@ public class EntitySplitting {
 	}
 
 	public List<String> filter(List<String> module){
-		List<String> javaEEComponentsToBeFiltered = entitySplittingProfile.getFilteredJavaEEComponents();
+		List<String> javaEEComponentsToBeFiltered = entitySplittingProfile.getFilteredJakartaEEComponents();
 		System.out.println(javaEEComponentsToBeFiltered);
 		List<String> sortedOut = new ArrayList<>();
 		for(String component : module){
@@ -83,7 +83,7 @@ public class EntitySplitting {
 		}
 	}
 
-	public List<String> getCentralJavaEEComponentNeighbours(String serviceName){
+	public List<String> getCentralJakartaEEComponentNeighbours(String serviceName){
 		int searchDepth = entitySplittingProfile.getSearchDepth();
 		String query = "MATCH (n:JavaImplementation {name: \'" + serviceName + "\'}) " +
 				"CALL apoc.neighbors.byhop(n, \'>CALLS_METHOD|>IMPLEMENTS|EXTENDS|INJECTS|IS_ENTITY\', " + searchDepth + ") " +
@@ -96,10 +96,10 @@ public class EntitySplitting {
 		}
 	}
 
-	public String findCentralJavaEEComponentInEntityNeighbours(List<String> entityNeighbours){
+	public String findCentralJakartaEEComponentInEntityNeighbours(List<String> entityNeighbours){
 		for(String neighbour : entityNeighbours){
 			for(String javaEEComponent : nodeKnowledgeService.findByName(neighbour).getCalculatedInterpretation()){
-				if(entitySplittingProfile.getCentralJavaEEComponent().equals(javaEEComponent)){
+				if(entitySplittingProfile.getCentralJakartaEEComponent().equals(javaEEComponent)){
 					return neighbour;
 				}
 			}
@@ -109,8 +109,8 @@ public class EntitySplitting {
 		for(String neighbour : entityNeighbours){
 			for(String javaEEComponent : nodeKnowledgeService.findByName(neighbour).getCalculatedInterpretation()){
 				// use the substitute
-				System.out.println(entitySplittingProfile.getSubstitutionalCentralJavaEEComponent());
-				if(entitySplittingProfile.getSubstitutionalCentralJavaEEComponent().equals(javaEEComponent)){
+				System.out.println(entitySplittingProfile.getSubstitutionalCentralJakartaEEComponent());
+				if(entitySplittingProfile.getSubstitutionalCentralJakartaEEComponent().equals(javaEEComponent)){
 					return neighbour;
 				}
 			}
